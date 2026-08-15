@@ -17,5 +17,6 @@ python main.py --batch tasks.txt --data-dir data --out results
 
 The solver will print reasoning and the predicted grid and will check correctness if expected outputs are present.
 # PCI---Baseline
+Para olhar o diário/logbook do projeto, entre na "Wiki" no próprio repositório do Github.
 
 Para checar quais outros modelos existem para colocar no .env, é só rodar o programa check_models.py com "python check_models.py".

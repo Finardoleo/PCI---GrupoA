@@ -2,18 +2,19 @@ import argparse
 from pathlib import Path
 from solver import solve_task_file
 
-
 def main():
-    parser = argparse.ArgumentParser(description="ARC Gemma Solver CLI")
+    parser = argparse.ArgumentParser(description="ARC Solver CLI - Votação Majoritária")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--task", help="Path to single ARC JSON task file")
     group.add_argument("--batch", help="Path to .txt file listing task filenames (one per line)")
     parser.add_argument("--data-dir", default="data", help="Data folder containing tasks")
     parser.add_argument("--out", help="Optional output folder to save results")
+    parser.add_argument("--votes", type=int, default=3, help="Número de execuções para a votação majoritária (Padrão: 3)")
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
     tasks = []
+    
     if args.task:
         tasks = [Path(args.task)]
     else:
@@ -26,33 +27,37 @@ def main():
                 tasks.append(data_dir / name)
 
     for task_path in tasks:
-        print(f"\n=== Solving {task_path} ===")
+        print(f"\n=== Solving {task_path} (Best of {args.votes} votes) ===")
         try:
-            res = solve_task_file(task_path)
+            res = solve_task_file(task_path, num_votes=args.votes)
         except Exception as e:
             print(f"Error solving {task_path}: {e}")
             continue
 
-        print("Reasoning:\n", res.get("reasoning", "(no reasoning)"))
-        print("Prediction grid:")
+        print("Winning Reasoning Summary:\n", res.get("reasoning", "(no reasoning)"))
+        print(f"Confidence: {res.get('confidence', '0/0')}")
+        print("Prediction grid (Consensus):")
+        
         for row in res.get("prediction", []):
             print(''.join(str(x) for x in row))
+            
         correct = res.get("correct")
         if correct is None:
             print("Correct: (no expected output to check)")
         else:
             print("Correct:", correct)
+            
         if args.out:
             outp = Path(args.out)
             outp.mkdir(parents=True, exist_ok=True)
             out_file = outp / (task_path.stem + "_result.txt")
             with out_file.open("w", encoding="utf-8") as f:
-                f.write("Reasoning:\n" + res.get("reasoning", "") + "\n\n")
+                f.write(f"Confidence: {res.get('confidence')}\n")
+                f.write("Winning Reasoning:\n" + res.get("reasoning", "") + "\n\n")
                 f.write("Prediction:\n")
                 for r in res.get("prediction", []):
                     f.write(''.join(str(x) for x in r) + "\n")
             print("Saved result to", out_file)
-
 
 if __name__ == "__main__":
     main()

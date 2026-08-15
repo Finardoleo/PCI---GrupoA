@@ -22,7 +22,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
     else:
         model_name = str(model)
 
-    # Novo Payload padrão Gemini/Gemma API
+    # Payload atualizado com trava rigorosa para JSON
     payload = {
         "contents": [{
             "parts": [{"text": prompt}]
@@ -31,6 +31,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
             "temperature": temperature,
             "candidateCount": 1,
             "maxOutputTokens": max_tokens,
+            "responseMimeType": "application/json" # Impede qualquer texto fora do JSON
         }
     }
 
@@ -42,7 +43,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
         else:
             endpoints = [endpoint_override + f"?key={api_key}"]
     else:
-        # URL atualizada para v1beta e :generateContent
+        # URL atualizada para v1beta e :generateContent, com regex corrigida para permitir pontos
         model_safe = re.sub(r"[^a-z0-9\-\.]", "", model_name.lower().replace(" ", "-"))
         endpoints = [
             f"https://generativelanguage.googleapis.com/v1beta/models/{model_safe}:generateContent?key={api_key}",
@@ -55,7 +56,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
     
     for url in endpoints:
         try:
-            resp = requests.post(url, json=payload, timeout=60)
+            resp = requests.post(url, json=payload, timeout=300)
             last_resp = resp
             if resp.status_code == 404:
                 continue
@@ -87,13 +88,12 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
         if last_exc: err_parts.append(f"Last exception: {repr(last_exc)}")
         raise RuntimeError("Failed to get a valid response from the Generative Language API. " + " | ".join(err_parts))
 
-    # Novo Parse da resposta para extrair o texto
+    # Parse da resposta para extrair o texto JSON retornado
     out = None
     if isinstance(j, dict):
         candidates = j.get("candidates", [])
         if candidates:
             try:
-                # O caminho exato onde o texto fica no JSON de retorno
                 out = candidates[0]["content"]["parts"][0]["text"]
             except (KeyError, IndexError, TypeError):
                 pass
@@ -102,7 +102,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
         out = json.dumps(j)
 
     try:
-        time.sleep(15) # Delay entre requisições
+        time.sleep(15)
     except Exception:
         pass
 
