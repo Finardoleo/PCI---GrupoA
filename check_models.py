@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # Carrega a chave do seu .env
 load_dotenv()
-api_key = os.getenv("GEMMA_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
 
 # Bate no endpoint de listagem de modelos
 url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"

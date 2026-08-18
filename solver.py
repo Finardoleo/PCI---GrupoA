@@ -2,7 +2,10 @@ import json
 import re
 from typing import Optional
 from llmhandler import generate_text
-from utils import load_json
+
+def load_json(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 def grid_to_text(grid):
     return "\n".join(" ".join(str(x) for x in row) for row in grid)
@@ -11,7 +14,6 @@ def build_prompt(task: dict) -> str:
     train = task.get("train", [])
     test = task.get("test", [])
     
-    # Prompt focado em concisão extrema para evitar estouro de tokens
     s = (
         "You are an expert puzzle solver for the ARC dataset.\n"
         "CRITICAL RULES:\n"
@@ -21,7 +23,7 @@ def build_prompt(task: dict) -> str:
         "```json\n"
         "{\n"
         "  \"reasoning_summary\": \"Very short rule explanation.\",\n"
-        "  \"prediction\": [[0, 0], [0, 0]]\n"
+        "  \"prediction\": [[0, 0], [0, 0]] // You MUST output the complete, fully explicitly written 2D matrix. Do not use shorthand or prose.\n"
         "}\n"
         "```\n\n"
     )
@@ -36,17 +38,15 @@ def build_prompt(task: dict) -> str:
         s += "### TEST INPUT ###\n"
         s += f"{grid_to_text(test[0]['input'])}\n\n"
 
-    s += "Now, briefly state the rule and provide the JSON."
+    s += "Now, briefly state the rule. YOUR FINAL OUTPUT MUST BE THE JSON BLOCK. Do not write anything after the JSON."
     return s
 
 def extract_json_from_text(text: str) -> Optional[dict]:
-    # Tentativa 1: Parsear direto (se a API retornar limpo)
     try:
         return json.loads(text.strip())
     except json.JSONDecodeError:
         pass
 
-    # Tentativa 2: Extrair bloco JSON via Regex
     m = re.search(r"\{[\s\S]*\}", text)
     if m:
         try:
@@ -54,29 +54,17 @@ def extract_json_from_text(text: str) -> Optional[dict]:
         except Exception:
             pass
             
-    # Tentativa 3 (O PLANO B SALVADOR): Extrair as matrizes soltas no texto
-    # Essa regex vai caçar as respostas que o Gemma solta como "Row 1: 8 8 0 0 1"
     rows = []
     for line in text.split('\n'):
         line = line.strip()
-        # Remove a sujeira "Row 0:", "Row 1:", etc.
         line = re.sub(r"^(?:Row\s*\d+:?|\[|\])\s*", "", line, flags=re.IGNORECASE)
-        
-        # Se a linha sobrou apenas com números, espaços e vírgulas...
         if re.match(r"^[0-9\s\[\],]+$", line) and len(re.findall(r"\d", line)) > 0:
-            # Pega todos os dígitos soltos
             digits = [int(d) for d in re.findall(r"\d+", line)]
-            
-            # Se tiver mais de 1 número, assumimos que é uma linha da matriz ARC
             if len(digits) > 1: 
                 rows.append(digits)
     
     if rows:
-        return {
-            "prediction": rows, 
-            "reasoning_summary": "Recuperado via Regex de Fallback (O modelo ignorou o JSON, mas acertou a matriz no texto livre)."
-        }
-
+        return {"prediction": rows, "reasoning_summary": "Recuperado via Regex de Fallback."}
     return None
 
 def normalize_grid(g):
@@ -92,7 +80,8 @@ def normalize_grid(g):
         return out
     return []
 
-def solve_task_file(path, num_votes=3):
+# NOME CORRIGIDO PARA SINCRONIZAR COM O MAIN.PY
+def solve_task(path, num_votes=3):
     task = load_json(path)
     prompt = build_prompt(task)
     
@@ -103,15 +92,7 @@ def solve_task_file(path, num_votes=3):
     
     for i in range(num_votes):
         try:
-            # Temperatura em 0.6 para viabilizar caminhos lógicos diferentes
             raw = generate_text(prompt, temperature=0.6, max_tokens=4096)
-
-            # --- ADICIONE ESTE BLOCO DE PRINT PARA O DEBUG ---
-            print(f"\n--- RAW OUTPUT TENTATIVA {i+1} ---")
-            print(raw)
-            print("-----------------------------------\n")
-            # -------------------------------------------------
-            
             parsed = extract_json_from_text(raw)
             
             if parsed and "prediction" in parsed:
@@ -121,7 +102,6 @@ def solve_task_file(path, num_votes=3):
                 if not pred_norm:
                     continue
                 
-                # Tupla para viabilizar hash no dicionário
                 pred_tuple = tuple(tuple(row) for row in pred_norm)
                 predictions_counter[pred_tuple] = predictions_counter.get(pred_tuple, 0) + 1
                 
@@ -133,17 +113,9 @@ def solve_task_file(path, num_votes=3):
             continue
 
     if not predictions_counter:
-        return {
-            "prediction": [], 
-            "reasoning": "O modelo falhou em gerar um JSON válido em todas as tentativas.", 
-            "correct": False,
-            "confidence": f"0/{num_votes}"
-        }
+        return False, "O modelo falhou em gerar um JSON válido em todas as tentativas.", []
 
-    # Calcula a Moda
     best_pred_tuple = max(predictions_counter, key=predictions_counter.get)
-    max_votes = predictions_counter[best_pred_tuple]
-    
     final_prediction = [list(row) for row in best_pred_tuple]
     final_reasoning = reasoning_map[best_pred_tuple]
 
@@ -152,11 +124,7 @@ def solve_task_file(path, num_votes=3):
     
     if test and "output" in test[0]:
         expected = normalize_grid(test[0]["output"])
-        correct = final_prediction == expected
+        correct = (final_prediction == expected)
 
-    return {
-        "prediction": final_prediction, 
-        "reasoning": final_reasoning, 
-        "correct": correct,
-        "confidence": f"{max_votes}/{num_votes} votos"
-    }
+    # Devolve exatamente o que o main.py espera
+    return correct, final_reasoning, final_prediction

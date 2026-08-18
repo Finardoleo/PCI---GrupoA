@@ -1,63 +1,74 @@
 import argparse
 from pathlib import Path
-from solver import solve_task_file
+import pandas as pd
+import os
+from solver import solve_task
+
+def save_to_spreadsheet(filename: str, task_name: str, is_correct: bool, reasoning: str, append: bool):
+    status = "CORRECT" if is_correct else "INCORRECT"
+    if is_correct is None:
+        status = "UNKNOWN (No test output)"
+        
+    cell_data = f"{status}\n\nReasoning:\n{reasoning}"
+    
+    df_new = pd.DataFrame({
+        "Task": [task_name],
+        "AI_Model_Result": [cell_data]
+    })
+    
+    if append and os.path.exists(filename):
+        try:
+            df_existing = pd.read_excel(filename)
+            if task_name in df_existing['Task'].values:
+                df_existing.loc[df_existing['Task'] == task_name, "AI_Model_Result"] = cell_data
+            else:
+                df_existing = pd.concat([df_existing, df_new], ignore_index=True)
+            df_existing.to_excel(filename, index=False)
+        except Exception as e:
+            print(f"Erro salvando no Excel: {e}")
+    else:
+        df_new.to_excel(filename, index=False)
+
+def process_file(filepath: str, output_file: str, append: bool):
+    if not Path(filepath).exists():
+        print(f"Arquivo não encontrado: {filepath}")
+        return
+        
+    task_name = Path(filepath).name
+    is_correct, reasoning, grid = solve_task(filepath)
+    
+    print(f"\n========================================")
+    print(f"Task: {task_name}")
+    print(f"Status: {is_correct}")
+    print(f"========================================")
+    print(f"Winning Reasoning:\n{reasoning}\n")
+    print("Predicted Grid:")
+    if grid:
+        for row in grid:
+            print(row)
+    else:
+        print("[No grid returned or parsing failed]")
+    print(f"========================================\n")
+    
+    save_to_spreadsheet(output_file, task_name, is_correct, reasoning, append)
 
 def main():
-    parser = argparse.ArgumentParser(description="ARC Solver CLI - Votação Majoritária")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--task", help="Path to single ARC JSON task file")
-    group.add_argument("--batch", help="Path to .txt file listing task filenames (one per line)")
-    parser.add_argument("--data-dir", default="data", help="Data folder containing tasks")
-    parser.add_argument("--out", help="Optional output folder to save results")
-    parser.add_argument("--votes", type=int, default=3, help="Número de execuções para a votação majoritária (Padrão: 3)")
-    args = parser.parse_args()
-
-    data_dir = Path(args.data_dir)
-    tasks = []
+    parser = argparse.ArgumentParser(description="ARC-AGI Solver")
+    parser.add_argument("--mode", choices=['single', 'batch'], required=True)
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", default="results.xlsx")
+    parser.add_argument("--new", action="store_true")
     
-    if args.task:
-        tasks = [Path(args.task)]
-    else:
-        batch_path = Path(args.batch)
-        with batch_path.open() as f:
-            for line in f:
-                name = line.strip()
-                if not name:
-                    continue
-                tasks.append(data_dir / name)
-
-    for task_path in tasks:
-        print(f"\n=== Solving {task_path} (Best of {args.votes} votes) ===")
-        try:
-            res = solve_task_file(task_path, num_votes=args.votes)
-        except Exception as e:
-            print(f"Error solving {task_path}: {e}")
-            continue
-
-        print("Winning Reasoning Summary:\n", res.get("reasoning", "(no reasoning)"))
-        print(f"Confidence: {res.get('confidence', '0/0')}")
-        print("Prediction grid (Consensus):")
-        
-        for row in res.get("prediction", []):
-            print(''.join(str(x) for x in row))
-            
-        correct = res.get("correct")
-        if correct is None:
-            print("Correct: (no expected output to check)")
-        else:
-            print("Correct:", correct)
-            
-        if args.out:
-            outp = Path(args.out)
-            outp.mkdir(parents=True, exist_ok=True)
-            out_file = outp / (task_path.stem + "_result.txt")
-            with out_file.open("w", encoding="utf-8") as f:
-                f.write(f"Confidence: {res.get('confidence')}\n")
-                f.write("Winning Reasoning:\n" + res.get("reasoning", "") + "\n\n")
-                f.write("Prediction:\n")
-                for r in res.get("prediction", []):
-                    f.write(''.join(str(x) for x in r) + "\n")
-            print("Saved result to", out_file)
+    args = parser.parse_args()
+    append_mode = not args.new
+    
+    if args.mode == 'single':
+        process_file(args.input, args.output, append_mode)
+    elif args.mode == 'batch':
+        with open(args.input, 'r') as f:
+            tasks = [line.strip() for line in f if line.strip()]
+        for task_path in tasks:
+            process_file(task_path, args.output, append_mode)
 
 if __name__ == "__main__":
     main()
