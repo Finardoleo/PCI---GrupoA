@@ -7,7 +7,8 @@ import re
 
 load_dotenv()
 
-def generate_text(prompt: str, model: str = None, api_key: str = None, max_tokens: int = 4096, temperature: float = 0.6) -> str:
+# Alterado de generate_text para generate_chat
+def generate_chat(contents: list, model: str = None, api_key: str = None, max_tokens: int = 4096, temperature: float = 0.6) -> str:
     api_key = api_key or os.getenv("GEMMA_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     model = model or os.getenv("GEMMA_MODEL", "gemma-2-27b-it")
     
@@ -21,15 +22,13 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
     else:
         model_name = str(model)
 
+    # Agora passamos o array 'contents' diretamente para o payload
     payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
+        "contents": contents,
         "generationConfig": {
             "temperature": temperature,
             "candidateCount": 1,
-            "maxOutputTokens": max_tokens,
-            "responseMimeType": "application/json"
+            "maxOutputTokens": max_tokens
         }
     }
 
@@ -67,7 +66,7 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
             continue
 
     if j is None:
-        raise RuntimeError("Failed to get a valid response from the Generative Language API.")
+        raise RuntimeError("Failed to get a valid response from the API.")
 
     out = None
     if isinstance(j, dict):
@@ -81,12 +80,8 @@ def generate_text(prompt: str, model: str = None, api_key: str = None, max_token
     if out is None:
         out = json.dumps(j)
 
-    # --- NOVO: IMPRIME O TEXTO CRU PARA DEBUG ---
-    print("\n--- RAW LLM RESPONSE ---")
-    print(out)
-    print("------------------------\n")
-
     try:
+        # Delay de 15 segundos mantido para evitar Rate Limit da API do Google
         time.sleep(15)
     except Exception:
         pass

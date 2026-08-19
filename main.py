@@ -20,7 +20,7 @@ def save_to_spreadsheet(filename: str, task_name: str, is_correct: bool, reasoni
     
     df_new = pd.DataFrame({
         "Task": [task_name],
-        model_col_name: [cell_data]  # Aqui está a coluna dinâmica!
+        model_col_name: [cell_data]
     })
     
     if append and os.path.exists(filename):
@@ -36,28 +36,38 @@ def save_to_spreadsheet(filename: str, task_name: str, is_correct: bool, reasoni
     else:
         df_new.to_excel(filename, index=False)
 
-def process_file(filepath: str, output_file: str, append: bool):
-    if not Path(filepath).exists():
-        print(f"Arquivo não encontrado: {filepath}")
-        return
+def process_file(filepath: str, output_file: str, append: bool, votes: int):
+    try:
+        if not Path(filepath).exists():
+            print(f"Arquivo não encontrado: {filepath}")
+            return
+            
+        task_name = Path(filepath).name
         
-    task_name = Path(filepath).name
-    is_correct, reasoning, grid = solve_task(filepath)
-    
-    print(f"\n========================================")
-    print(f"Task: {task_name}")
-    print(f"Status: {is_correct}")
-    print(f"========================================")
-    print(f"Winning Reasoning:\n{reasoning}\n")
-    print("Predicted Grid:")
-    if grid:
-        for row in grid:
-            print(row)
-    else:
-        print("[No grid returned or parsing failed]")
-    print(f"========================================\n")
-    
-    save_to_spreadsheet(output_file, task_name, is_correct, reasoning, append)
+        is_correct, reasoning, grid = solve_task(filepath, num_votes=votes)
+        
+        print(f"\n========================================")
+        print(f"Task: {task_name}")
+        print(f"Status: {is_correct}")
+        print(f"========================================")
+        print(f"Winning Reasoning:\n{reasoning}\n")
+        print("Predicted Grid:")
+        if grid:
+            for row in grid:
+                print(row)
+        else:
+            print("[No grid returned or parsing failed]")
+        print(f"========================================\n")
+        
+        save_to_spreadsheet(output_file, task_name, is_correct, reasoning, append)
+        
+    except Exception as e:
+        # Captura qualquer erro de código, API ou parse, garantindo que o lote continue
+        print(f"\n[!] ERRO CRÍTICO ao processar a task {filepath}: {e}")
+        
+        # Salva o erro na planilha para você saber exatamente o que falhou na análise posterior
+        task_name = Path(filepath).name if Path(filepath).exists() else str(filepath)
+        save_to_spreadsheet(output_file, task_name, False, f"ERRO DE EXECUÇÃO: {e}", append)
 
 def main():
     parser = argparse.ArgumentParser(description="ARC-AGI Solver")
@@ -65,17 +75,29 @@ def main():
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", default="results.xlsx")
     parser.add_argument("--new", action="store_true")
+    parser.add_argument("--votes", type=int, default=3, help="Número de chamadas à API por task (Padrão: 3)")
     
     args = parser.parse_args()
-    append_mode = not args.new
     
     if args.mode == 'single':
-        process_file(args.input, args.output, append_mode)
+        append_mode = not args.new
+        process_file(args.input, args.output, append_mode, args.votes)
+        
     elif args.mode == 'batch':
         with open(args.input, 'r') as f:
             tasks = [line.strip() for line in f if line.strip()]
-        for task_path in tasks:
-            process_file(task_path, args.output, append_mode)
+            
+        for i, task_path in enumerate(tasks):
+            print(f"\n>>> LOTE: Processando {i+1}/{len(tasks)} -> {task_path}")
+            
+            # BUG FIX: Se a flag --new for passada no modo batch, ela só deve criar um arquivo novo 
+            # na PRIMEIRA iteração. Em todas as iterações seguintes, ela deve adicionar os dados (append).
+            if args.new and i == 0:
+                current_append = False
+            else:
+                current_append = True
+                
+            process_file(task_path, args.output, current_append, args.votes)
 
 if __name__ == "__main__":
     main()
