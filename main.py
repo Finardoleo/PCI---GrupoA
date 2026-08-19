@@ -2,7 +2,11 @@ import argparse
 from pathlib import Path
 import pandas as pd
 import os
+from dotenv import load_dotenv
 from solver import solve_task
+
+# Carrega as variáveis do .env
+load_dotenv()
 
 def save_to_spreadsheet(filename: str, task_name: str, is_correct: bool, reasoning: str, append: bool):
     status = "CORRECT" if is_correct else "INCORRECT"
@@ -11,16 +15,19 @@ def save_to_spreadsheet(filename: str, task_name: str, is_correct: bool, reasoni
         
     cell_data = f"{status}\n\nReasoning:\n{reasoning}"
     
+    # Puxa o nome do modelo do seu .env. Se não achar, usa "AI_Model" como padrão.
+    model_col_name = os.getenv("GEMMA_MODEL", "AI_Model")
+    
     df_new = pd.DataFrame({
         "Task": [task_name],
-        "AI_Model_Result": [cell_data]
+        model_col_name: [cell_data]  # Aqui está a coluna dinâmica!
     })
     
     if append and os.path.exists(filename):
         try:
             df_existing = pd.read_excel(filename)
             if task_name in df_existing['Task'].values:
-                df_existing.loc[df_existing['Task'] == task_name, "AI_Model_Result"] = cell_data
+                df_existing.loc[df_existing['Task'] == task_name, model_col_name] = cell_data
             else:
                 df_existing = pd.concat([df_existing, df_new], ignore_index=True)
             df_existing.to_excel(filename, index=False)

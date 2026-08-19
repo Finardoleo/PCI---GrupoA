@@ -54,17 +54,33 @@ def extract_json_from_text(text: str) -> Optional[dict]:
         except Exception:
             pass
             
-    rows = []
+    # Lógica atualizada: separa as matrizes em blocos para não juntar o input com o output
+    blocks = []
+    current_block = []
+    
     for line in text.split('\n'):
         line = line.strip()
         line = re.sub(r"^(?:Row\s*\d+:?|\[|\])\s*", "", line, flags=re.IGNORECASE)
+        
+        # Se a linha tem números, adiciona ao bloco atual
         if re.match(r"^[0-9\s\[\],]+$", line) and len(re.findall(r"\d", line)) > 0:
             digits = [int(d) for d in re.findall(r"\d+", line)]
             if len(digits) > 1: 
-                rows.append(digits)
-    
-    if rows:
-        return {"prediction": rows, "reasoning_summary": "Recuperado via Regex de Fallback."}
+                current_block.append(digits)
+        else:
+            # Se a linha quebrou o padrão (ex: texto solto), fecha o bloco atual
+            if current_block:
+                blocks.append(current_block)
+                current_block = []
+                
+    # Salva o último bloco se o texto terminar com números
+    if current_block:
+        blocks.append(current_block)
+        
+    if blocks:
+        # Retorna apenas a ÚLTIMA matriz identificada no texto
+        return {"prediction": blocks[-1], "reasoning_summary": "Recuperado via Regex de Fallback."}
+
     return None
 
 def normalize_grid(g):
