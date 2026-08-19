@@ -67,12 +67,12 @@ python main.py --mode batch --input tasks.txt --output batch_results.xlsx
 ### Additional Flags
 * --new: By default, the script appends new results to an existing spreadsheet. Add the --new flag to the end of your command to overwrite the file and start fresh.
 
-### Majority Voting & API Calls
+(### Majority Voting & API Calls
 
 To improve accuracy and mitigate hallucinations, the solver uses a majority voting system. By default, it sends each task to the model 3 times and selects the most common resulting grid. You can adjust this behavior using the `--votes` flag:
 
 * **`--votes 3`**: (Default) Recommended for rigorous evaluation. Provides a mathematical safety net if the model makes a logical error or outputs an invalid format on a single run.
-* **`--votes 1`**: Recommended for rapid testing, debugging pipeline changes, or saving API tokens. It cuts execution time by a third but relies entirely on the model's first zero-shot attempt.
+* **`--votes 1`**: Recommended for rapid testing, debugging pipeline changes, or saving API tokens. It cuts execution time by a third but relies entirely on the model's first zero-shot attempt.) Descartado
 
 **Example usage for fast debugging:**
 ```bash
