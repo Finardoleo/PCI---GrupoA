@@ -1,4 +1,5 @@
 import json
+import time
 from llmhandler import generate_chat
 
 def load_json(path):
@@ -38,12 +39,16 @@ def solve_task(path):
     
     print(f"Processando task (2-Step Prompting)...")
     
+    start_total = time.time()
+    
     try:
         # ETAPA 1: Chamada Isolada 1 (Liberdade total de tokens)
         chat_1 = [{"role": "user", "parts": [{"text": reasoning_prompt}]}]
         
         print(f"  Etapa 1: Pensando...")
+        start_1 = time.time()
         raw_thought = generate_chat(chat_1, temperature=0.6, max_tokens=8192)
+        time_1 = time.time() - start_1
         
         print("\n--- LLM REASONING ---")
         print(raw_thought)
@@ -74,11 +79,16 @@ Example format for a single number:
         chat_2 = [{"role": "user", "parts": [{"text": formatting_prompt}]}]
         
         print(f"  Etapa 2: Formatando a saída...")
+        start_2 = time.time()
         raw_prediction = generate_chat(chat_2, temperature=0.1, max_tokens=8192)
+        time_2 = time.time() - start_2
         
         print("\n--- LLM FINAL EXTRACTION ---")
         print(raw_prediction)
         print("----------------------------\n")
+        
+        total_time = time.time() - start_total
+        print(f"TIMING: Stage 1: {time_1:.2f}s | Stage 2: {time_2:.2f}s | Total: {total_time:.2f}s\n")
         
         return raw_prediction
                 

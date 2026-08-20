@@ -1,6 +1,1 @@
 .env
-__pycache__/
-*.pyc
-results/
-.vscode/
-.DS_Store
