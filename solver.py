@@ -9,6 +9,98 @@ def load_json(path):
 def grid_to_text(grid):
     return "\n".join(" ".join(str(x) for x in row) for row in grid)
 
+def parse_prediction(raw_text):
+    """Extract grid from <prediction>...</prediction> tags or from raw grid text"""
+    try:
+        # First try to find <prediction> tags
+        start = raw_text.find("<prediction>")
+        end = raw_text.find("</prediction>")
+        if start != -1 and end != -1:
+            grid_text = raw_text[start + len("<prediction>"):end].strip()
+            grid = []
+            for line in grid_text.split("\n"):
+                line = line.strip()
+                if line:
+                    row = [int(x) for x in line.split()]
+                    grid.append(row)
+            return grid if grid else None
+        
+        # If no tags, look for "Row N:" patterns
+        lines = raw_text.split("\n")
+        grid = []
+        for line in lines:
+            line = line.strip()
+            # Look for lines starting with "Row" and containing numbers
+            if line.startswith("Row") and ":" in line:
+                # Extract numbers after the colon
+                parts = line.split(":", 1)
+                if len(parts) > 1:
+                    num_part = parts[1].strip()
+                    try:
+                        row = [int(x) for x in num_part.split()]
+                        if row:
+                            grid.append(row)
+                    except:
+                        pass
+        
+        if grid:
+            return grid
+        
+        # Fallback: look for the largest grid pattern (most columns)
+        all_grids = []
+        current_grid = []
+        for line in lines:
+            line = line.strip()
+            # Check if line looks like a grid row (numbers separated by spaces)
+            if line and all(part.isdigit() or part == '' for part in line.split()):
+                numbers = [int(x) for x in line.split() if x]
+                if numbers:
+                    current_grid.append(numbers)
+            elif current_grid:
+                all_grids.append(current_grid)
+                current_grid = []
+        if current_grid:
+            all_grids.append(current_grid)
+        
+        # Return the largest grid (most columns)
+        if all_grids:
+            return max(all_grids, key=lambda g: len(g[0]) if g else 0)
+        
+        return None
+    except:
+        return None
+
+def grids_equal(grid1, grid2):
+    """Compare two grids for equality"""
+    if grid1 is None or grid2 is None:
+        return False
+    if len(grid1) != len(grid2):
+        return False
+    for r1, r2 in zip(grid1, grid2):
+        if r1 != r2:
+            return False
+    return True
+
+def calculate_accuracy(task: dict, raw_prediction: str):
+    """Calculate accuracy comparing predicted output with ground truth"""
+    if not task.get("test"):
+        return None
+    
+    predicted_grid = parse_prediction(raw_prediction)
+    test_cases = task.get("test", [])
+    
+    if predicted_grid is None:
+        return 0.0
+    
+    correct = 0
+    for test_case in test_cases:
+        expected_grid = test_case.get("output")
+        if grids_equal(predicted_grid, expected_grid):
+            correct += 1
+    
+    accuracy = (correct / len(test_cases)) * 100 if test_cases else 0.0
+    return accuracy
+
 def build_reasoning_prompt(task: dict) -> str:
     train = task.get("train", [])
     test = task.get("test", [])
@@ -89,6 +181,10 @@ Example format for a single number:
         
         total_time = time.time() - start_total
         print(f"TIMING: Stage 1: {time_1:.2f}s | Stage 2: {time_2:.2f}s | Total: {total_time:.2f}s\n")
+        
+        accuracy = calculate_accuracy(task, raw_prediction)
+        if accuracy is not None:
+            print(f"ACCURACY: {accuracy:.1f}%\n")
         
         return raw_prediction
                 
