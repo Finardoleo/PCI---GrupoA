@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import pandas as pd
 import os
+import time
 from dotenv import load_dotenv
 from solver import solve_task
 
@@ -20,7 +21,6 @@ def save_to_spreadsheet(filename: str, task_name: str, final_extract: str, appen
     if append and os.path.exists(filename):
         try:
             df_existing = pd.read_excel(filename)
-            # Mantém a estrutura: se a task já existe, atualiza a coluna do modelo específico
             if task_name in df_existing['Task'].values:
                 df_existing.loc[df_existing['Task'] == task_name, model_col_name] = final_extract
             else:
@@ -39,15 +39,25 @@ def process_file(filepath: str, output_file: str, append: bool):
             
         task_name = Path(filepath).name
         
+        # Inicia o cronômetro para esta task específica
+        start_time = time.time()
+        
         # Recebe apenas a string final bruta
         final_extract = solve_task(filepath)
         
+        # Para o cronômetro e calcula o tempo decorrido
+        elapsed_time = time.time() - start_time
+        
+        # Anexa o tempo ao texto que vai para a planilha
+        final_extract_with_time = f"{final_extract}\n\nTempo: {elapsed_time:.2f}s"
+        
         print(f"\n========================================")
         print(f"Task: {task_name}")
+        print(f"Tempo da Task: {elapsed_time:.2f}s")
         print(f"========================================\n")
         
-        # Salva o texto bruto na planilha
-        save_to_spreadsheet(output_file, task_name, final_extract, append)
+        # Salva o texto bruto (agora com o tempo) na planilha
+        save_to_spreadsheet(output_file, task_name, final_extract_with_time, append)
         
     except Exception as e:
         print(f"\n[!] ERRO CRÍTICO ao processar a task {filepath}: {e}")
@@ -71,13 +81,22 @@ def main():
         with open(args.input, 'r') as f:
             tasks = [line.strip() for line in f if line.strip()]
             
+        # Inicia o cronômetro global para o lote inteiro
+        batch_start_time = time.time()
+            
         for i, task_path in enumerate(tasks):
             print(f"\n>>> LOTE: Processando {i+1}/{len(tasks)} -> {task_path}")
             
-            # Controle seguro para criar novo arquivo apenas na primeira iteração do batch
             current_append = not (args.new and i == 0)
-                
             process_file(task_path, args.output, current_append)
+
+        # Para o cronômetro do lote e salva o resultado final no Excel
+        batch_elapsed_time = time.time() - batch_start_time
+        print(f"\n[+] Lote finalizado! Tempo total: {batch_elapsed_time:.2f} segundos.")
+        
+        # Adiciona a linha final na planilha
+        # A primeira coluna será "Tempo do Batch" e a segunda terá os segundos exatos
+        save_to_spreadsheet(args.output, "Tempo do Batch", f"{batch_elapsed_time:.2f}s", True)
 
 if __name__ == "__main__":
     main()
