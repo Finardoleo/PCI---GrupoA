@@ -47,14 +47,21 @@ def generate_chat(contents: list, model: str = None, api_key: str = None, max_to
         ]
 
     last_resp = None
+    last_error_detail = ""
     j = None
     
     for url in endpoints:
         try:
             resp = requests.post(url, json=payload, timeout=300)
             last_resp = resp
+            
+            # Se não for sucesso (200), guarda o texto do erro para mostrar
+            if resp.status_code != 200:
+                last_error_detail = resp.text
+                
             if resp.status_code == 404:
                 continue
+                
             resp.raise_for_status()
             
             try:
@@ -66,7 +73,8 @@ def generate_chat(contents: list, model: str = None, api_key: str = None, max_to
             continue
 
     if j is None:
-        raise RuntimeError("Failed to get a valid response from the API.")
+        error_msg = f"Failed to get a valid response from the API.\nÚltimo status: {getattr(last_resp, 'status_code', 'N/A')}\nDetalhes do Erro da API: {last_error_detail}"
+        raise RuntimeError(error_msg)
 
     out = None
     if isinstance(j, dict):
