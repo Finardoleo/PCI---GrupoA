@@ -57,8 +57,8 @@ def solve_task(path):
         # ETAPA 2: Chamada Isolada 2 (Novo escopo absoluto)
         # Em vez de continuar a conversa, iniciamos uma requisição do zero,
         # injetando o texto da Etapa 1 como se fosse um documento a ser lido.
-        formatting_prompt = f"""You are a strict data parser. Your ONLY job is to extract the final predicted grid or scalar value from the reasoning text provided below.
-CRITICAL: Do NOT write any explanations, summaries, or conversational text. Output NOTHING but the <prediction> tags containing the numbers.
+        formatting_prompt = f"""You are a strict data parser. Your ONLY job is to extract the final predicted grid or scalar value from the reasoning text provided below, as well as summarise it.
+CRITICAL: Do NOT write any extra explanations, or conversational text. Output NOTHING but the <prediction> tags containing the numbers AND the Reasoning Summary behind your answer.
 
 [REASONING TEXT BEGIN]
 {raw_thought}
