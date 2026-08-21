@@ -1,0 +1,62 @@
+Análise dos Resultados do Novo Batch (Comparativo de Modelos)
+Após cruzar os dados dos outputs gerados com os gabaritos das 10 tasks, aqui está o diagnóstico detalhado da performance e do raciocínio (reasoning) neste novo cenário:
+
+1. Task 3aa6fb7a.json (Completar o L)
+Status: Todos Corretos.
+
+Análise: Todos os modelos identificaram com sucesso a lógica de procurar áreas 2x2 com três células de cor 8 e preencher a célula 0 restante com 1. Mesmo com a metade dos tokens, o Flash-Lite conseguiu resumir a regra e aplicar o padrão perfeitamente.
+
+2. Task 44d8ac46.json (Preenchimento Condicional)
+Status: Todos Corretos.
+
+Análise: Ótima performance coletiva. Todos os quatro modelos identificaram que a regra exige preencher com 2 apenas o interior que forma um quadrado perfeito (3x3), ignorando os "buracos" retangulares ou irregulares.
+
+3. Task 44f52bb0.json (Redução 3x3 para 1x1)
+Status: Apenas gemma-4-31b-it Correto. Os outros 3 falharam.
+
+Análise: Aqui vemos a diferença de capacidade de abstração. O gemma-4-31b-it cravou o output 1, justificando corretamente pela simetria. O gemma-4-26b inventou uma regra sobre "conexões ortogonais", e as duas versões do gemini-3.5-flash-lite focaram em "contagem ímpar de pixels" ou "padrão em H", errando a resposta (retornaram 7).
+
+4. Task 0a938d79.json (Extrapolação Periódica)
+Status: gemma-4-31b-it e gemini-3.5-flash-lite Corretos. gemma-4-26b e gemini-metade Incorretos.
+
+Análise: O modelo principal e o Flash completo calcularam bem o delta entre os pixels e preencheram colunas verticais. O gemma-4-26b alucinou cores (processou as cores 2 e 5 em vez de 3 e 4). O gemini-metade, por ter o raciocínio cortado, aplicou a repetição em linhas horizontais em vez de colunas, errando a orientação do padrão.
+
+5. Task 00576224.json (Tesselagem e Inversão)
+Status: Todos Corretos.
+
+Análise: Padrão geométrico forte. Todos os modelos conseguiram montar o macro-grid 6x6 alternando corretamente a matriz 2x2 original com a sua versão espelhada/invertida.
+
+6. Task 0b17323b.json (Progressão Aritmética)
+Status: Todos Corretos.
+
+Análise: A lógica de progressão espacial (+3 linhas, +3 colunas) desenhando uma diagonal foi facilmente capturada e reproduzida por todos os modelos sem dificuldades, mesmo com restrição de tokens.
+
+7. Task 0a1d4ef5.json (Compressão de Grid)
+Status: gemma-4-31b-it Correto (no raciocínio). gemini-3.5-flash-lite Incorreto.
+
+Análise: O Flash-Lite gerou uma matriz 3x3 com valores completamente alucinados (como 5, 3, 8). O Gemma-31b mapeou corretamente as 4 linhas com 3 blocos cada, embora tenha enfrentado dificuldade na formatação final das tags <prediction>.
+
+8. Task 0bb8deee.json (Remontagem de Bounding Boxes)
+Status: Modelos Gemma Corretos. Modelos Gemini Incorretos.
+
+Análise: Os modelos da linha Gemma juntaram os 4 quadrantes perfeitamente em um grid 6x6. As versões do Gemini perderam a referência espacial e retornaram grids vazios ou com as cores totalmente fora de posição, sugerindo perda de contexto das coordenadas.
+
+9. Task 0becf7df.json (Legenda de Troca de Cores)
+Status: gemini-metade Incorreto. Os demais Corretos.
+
+Análise: O bloco 2x2 pedia para trocar os elementos da mesma linha (8 com 9, e 2 com 4). Os três primeiros modelos fizeram isso perfeitamente. O gemini-metade resumiu mal a regra e fez uma troca cruzada (8 com 2, e 9 com 4), errando a matriz inteira.
+
+10. Task 0b148d64.json (Detecção de Anomalia e Recorte):
+
+Status: Apenas o gemma-4-31b-it acertou. Os outros 3 falharam.
+
+Análise: O problema exigia encontrar o "bloco intruso" (o único com uma cor diferente dos demais) e extraí-lo, removendo colunas/linhas inteiras de zeros. O gemma-4-31b-it fez isso com maestria, extraindo o bloco da cor 1 (tamanho 6x6). Já o gemma-4-26b e os dois gemini-flash-lite erraram a regra básica: eles simplesmente recortaram o bloco inferior (cor 3) inteiro ou sub-matrizes arbitrárias, sem aplicar a limpeza dos zeros.
+
+Resumo do Progresso e Comportamento
+gemma-4-31b-it: Continua sendo o modelo mais confiável. Raciocina de forma estruturada e captura propriedades complexas (como simetria).
+
+gemma-4-26b-a4b-it: Muito bom em regras espaciais, mas sujeito a pequenas alucinações de input (como visto na task 0a938d79).
+
+gemini-3.5-flash-lite: Rápido (tempos muito mais baixos), mas recorre a heurísticas mais fracas (como contar pixels) quando a abstração geométrica é complexa.
+
+gemini-3.5-flash-lite (metade max tokens): A restrição de tokens prejudica nitidamente o raciocínio. O modelo é forçado a pular etapas de verificação, resultando em regras invertidas ou lógicas aplicadas na orientação errada.
