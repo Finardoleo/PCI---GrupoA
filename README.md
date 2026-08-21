@@ -3,6 +3,8 @@ Para olhar o diário/logbook do projeto, entre na "Wiki" no próprio repositóri
 
 Para checar quais outros modelos existem para colocar no .env, é só rodar o programa check_models.py com "python check_models.py".
 
+Para gerar um gráfico dos dados obtidos na planilha, é só rodar o programa gera_grafico.py com "python gera_grafico.py".
+
 # ARC-AGI Solver (Gemma & Gemini API)
 
 This project is an automated solver for ARC-AGI-1 problems. It utilizes the `gemma-4-31b-it` model via the Google Gemini API to analyze ARC task grids and predict the correct output. 
