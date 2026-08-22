@@ -2,10 +2,28 @@ import os
 from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
+from typing import Tuple, Set, List
 
 load_dotenv()
 
 SUMMARY_ROW_NAMES = ["Batch Accuracy", "Tempo do Batch", "Tokens do Batch"]
+DEFAULT_RESULTS_DIR = "Results"
+
+def resolve_spreadsheet_paths(base_filename: str) -> Tuple[Path, str]:
+    """
+    Resolve o diretório e o nome base para as planilhas.
+    Se nenhum diretório for especificado (ex: 'results.csv'), direciona para 'Results/'.
+    Garante que a pasta de destino exista.
+    """
+    path_obj = Path(base_filename)
+    if path_obj.parent == Path("."):
+        dir_path = Path(DEFAULT_RESULTS_DIR)
+    else:
+        dir_path = path_obj.parent
+        
+    dir_path.mkdir(parents=True, exist_ok=True)
+    base_stem = path_obj.stem
+    return dir_path, base_stem
 
 def format_tokens_string(tokens: dict) -> str:
     prompt = tokens.get("prompt", 0)
@@ -20,14 +38,12 @@ def format_time_string(timing: dict) -> str:
     formatting = timing.get("formatting", 0.0)
     return f"Total: {total:.2f}s (Raciocínio: {reasoning:.2f}s, Formatação: {formatting:.2f}s)"
 
-def get_completed_tasks(base_filename: str, model_col_name: str = None) -> set:
+def get_completed_tasks(base_filename: str, model_col_name: str = None) -> Set[str]:
     """
     Retorna o conjunto de nomes de tasks que já foram processadas com sucesso para este modelo.
     """
     model_col_name = model_col_name or os.getenv("GEMMA_MODEL", "AI_Model")
-    path_obj = Path(base_filename)
-    base = path_obj.stem
-    dir_path = path_obj.parent
+    dir_path, base = resolve_spreadsheet_paths(base_filename)
     acc_file = os.path.join(dir_path, f"{base}_accuracy.csv")
     
     if not os.path.exists(acc_file):
@@ -51,16 +67,14 @@ def get_completed_tasks(base_filename: str, model_col_name: str = None) -> set:
         print(f"Aviso ao verificar tasks já concluídas: {e}")
         return set()
 
-def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col_name: str = None) -> list:
+def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col_name: str = None) -> List[str]:
     """
     Retorna a lista de nomes de tasks a serem reexecutadas com base no filtro:
       - 'incorrect': Todas as tasks com status INCORRECT, ERROR ou UNKNOWN na planilha de acurácia.
       - 'insufficient': Tasks com falha que também contenham 'insufficient data' na planilha de reasoning.
     """
     model_col_name = model_col_name or os.getenv("GEMMA_MODEL", "AI_Model")
-    path_obj = Path(base_filename)
-    base = path_obj.stem
-    dir_path = path_obj.parent
+    dir_path, base = resolve_spreadsheet_paths(base_filename)
     
     acc_file = os.path.join(dir_path, f"{base}_accuracy.csv")
     rea_file = os.path.join(dir_path, f"{base}_reasoning.csv")
@@ -112,6 +126,7 @@ def save_entry_to_csv(filepath: str, task_name: str, model_col_name: str, value:
     """
     Salva ou anexa uma linha em um arquivo CSV de forma idempotente, mantendo linhas de resumo ao final.
     """
+    Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     df_new = pd.DataFrame({
         "Task": [task_name],
         model_col_name: [value]
@@ -143,7 +158,7 @@ def save_entry_to_csv(filepath: str, task_name: str, model_col_name: str, value:
 
 def save_task_to_split_spreadsheets(base_filename: str, task_name: str, result: dict, append: bool):
     """
-    Salva os dados de uma única task nos 5 arquivos CSV separados:
+    Salva os dados de uma única task nos 5 arquivos CSV separados dentro da pasta Results:
       1. <nome>_accuracy.csv -> Status de acerto (CORRECT / INCORRECT)
       2. <nome>_tokens.csv   -> Detalhamento de tokens usados
       3. <nome>_reasoning.csv-> Apenas o resumo do raciocínio
@@ -151,9 +166,7 @@ def save_task_to_split_spreadsheets(base_filename: str, task_name: str, result: 
       5. <nome>_times.csv    -> Detalhamento de tempos
     """
     model_col_name = os.getenv("GEMMA_MODEL", "AI_Model")
-    path_obj = Path(base_filename)
-    base = path_obj.stem
-    dir_path = path_obj.parent
+    dir_path, base = resolve_spreadsheet_paths(base_filename)
     
     # 1. Accuracy
     acc_file = os.path.join(dir_path, f"{base}_accuracy.csv")
@@ -177,7 +190,7 @@ def save_task_to_split_spreadsheets(base_filename: str, task_name: str, result: 
     time_str = format_time_string(result.get("timing", {}))
     save_entry_to_csv(time_file, task_name, model_col_name, time_str, append)
     
-    print(f"[+] Dados salvos nos 5 arquivos CSV ({base}_accuracy, _tokens, _reasoning, _grids, _times.csv)")
+    print(f"[+] Dados salvos em {dir_path}/ ({base}_accuracy, _tokens, _reasoning, _grids, _times.csv)")
 
 def save_batch_summary_to_split_spreadsheets(
     base_filename: str,
@@ -191,9 +204,7 @@ def save_batch_summary_to_split_spreadsheets(
     calculando a acurácia global com base em todas as tasks do arquivo.
     """
     model_col_name = os.getenv("GEMMA_MODEL", "AI_Model")
-    path_obj = Path(base_filename)
-    base = path_obj.stem
-    dir_path = path_obj.parent
+    dir_path, base = resolve_spreadsheet_paths(base_filename)
     
     # 1. Accuracy - Calcula com base em todas as tasks da planilha para refletir o total acumulado
     acc_file = os.path.join(dir_path, f"{base}_accuracy.csv")
@@ -225,4 +236,4 @@ def save_batch_summary_to_split_spreadsheets(
     time_summary = format_time_string(batch_timing)
     save_entry_to_csv(time_file, "Tempo do Batch", model_col_name, time_summary, True)
     
-    print(f"[+] Resumo do Batch atualizado nos arquivos CSV!")
+    print(f"[+] Resumo do Batch atualizado em {dir_path}/ ({base}_*.csv)!")

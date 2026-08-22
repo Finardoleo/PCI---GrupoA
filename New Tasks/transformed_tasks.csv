@@ -1,0 +1,9 @@
+New_Task_ID,Original_Task,Input_Transformation,Output_Transformation
+3afa37ac,dc2e9a9d.json,rotate_180,rotate_90_ccw
+aa943af0,03560426.json,rotate_90_cw,reflect_horizontal
+89762c2e,e681b708.json,rotate_90_ccw,rotate_90_cw
+ccedba48,6430c8c4.json,reflect_horizontal,reflect_horizontal
+69a2619d,4290ef0e.json,"color_permute(1->2,2->6,3->8,4->7,6->4,7->1,8->3)","color_permute(1->2,2->6,3->8,4->7,6->4,7->1,8->3)"
+2d1aa423,8a004b2b.json,"color_permute(1->3,2->8,3->4,4->2,8->1)","color_permute(1->3,2->8,3->4,4->2,8->1)"
+aef10469,22a4bbc2.json,rotate_180+rotate_90_cw,"color_permute(2->8,8->2)+reflect_horizontal"
+1e663526,46442a0e.json,rotate_180+rotate_90_cw,reflect_horizontal+rotate_90_ccw

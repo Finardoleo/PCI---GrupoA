@@ -11,11 +11,12 @@ def generate_chat(
     contents: list,
     model: str = None,
     api_key: str = None,
-    max_tokens: int = 16384,
+    max_tokens: int = None,
     temperature: float = 0.6,
     thinking_level: str = None,
     thinking_budget: int = None,
-    rate_limit_delay: float = 15.0
+    rate_limit_delay: float = 15.0,
+    max_retries: int = 3
 ) -> dict:
     """
     Envia uma requisição para a API Google Gemini / Gemma.
@@ -37,6 +38,9 @@ def generate_chat(
         model_name = str(model).split("/", 1)[1]
     else:
         model_name = str(model)
+
+    if max_tokens is None:
+        max_tokens = int(os.getenv("MAX_OUTPUT_TOKENS", "16384"))
 
     generation_config = {
         "temperature": temperature,
@@ -90,29 +94,41 @@ def generate_chat(
     j = None
     api_latency = 0.0
     
-    for url in endpoints:
-        try:
-            req_start = time.time()
-            resp = requests.post(url, json=payload, timeout=300)
-            req_duration = time.time() - req_start
-            last_resp = resp
-            
-            if resp.status_code != 200:
-                last_error_detail = resp.text
-                
-            if resp.status_code == 404:
-                continue
-                
-            resp.raise_for_status()
-            api_latency = req_duration
-            
+    for attempt in range(1, max_retries + 1):
+        for url in endpoints:
             try:
-                j = resp.json()
-            except ValueError:
-                j = None
+                req_start = time.time()
+                timeout_val = int(os.getenv("API_TIMEOUT", "900"))
+                resp = requests.post(url, json=payload, timeout=timeout_val)
+                req_duration = time.time() - req_start
+                last_resp = resp
+                
+                if resp.status_code != 200:
+                    last_error_detail = resp.text
+                    
+                if resp.status_code == 404:
+                    continue
+                    
+                resp.raise_for_status()
+                api_latency = req_duration
+                
+                try:
+                    j = resp.json()
+                except ValueError:
+                    j = None
+                break
+            except requests.RequestException as e:
+                last_error_detail = f"Erro de conexão/requisição: {e}"
+                continue
+
+        if j is not None:
             break
-        except requests.RequestException:
-            continue
+            
+        # Se falhou e ainda tem tentativas, aguarda antes de tentar de novo
+        if attempt < max_retries:
+            wait_time = attempt * 5
+            print(f"  [!] Falha na tentativa {attempt}/{max_retries}. Aguardando {wait_time}s para tentar novamente...")
+            time.sleep(wait_time)
 
     if j is None:
         error_msg = f"Failed to get a valid response from the API.\nÚltimo status: {getattr(last_resp, 'status_code', 'N/A')}\nDetalhes do Erro da API: {last_error_detail}"

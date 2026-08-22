@@ -86,14 +86,37 @@ python main.py --output batch_results.csv --retry insufficient
 * `--retry {incorrect, insufficient}`: Filter and re-execute only failed tasks.
 
 ## Output
-The script automatically evaluates and corrects each task against the ARC-AGI ground-truth test grid and generates **5 dedicated CSV spreadsheets**:
-1. `<output>_accuracy.csv`: Contains whether the model got the problem right (`CORRECT` / `INCORRECT`) and the final batch accuracy (`Batch Accuracy: XX.XX% (Y/Z)`).
-2. `<output>_tokens.csv`: Contains the tokens breakdown per task (`Total: X (Prompt: Y, Resposta: Z, Pensamento: W)`) and the cumulative batch sum (`Tokens do Batch`).
-3. `<output>_reasoning.csv`: Contains only the summary of the reasoning behind the answer.
-4. `<output>_grids.csv`: Contains only the predicted matrices/grids.
-5. `<output>_times.csv`: Contains only the timers (`Total: XX.XXs (Raciocínio: YY.YYs, Formatação: ZZ.ZZs)`) and the cumulative batch sum (`Tempo do Batch`).
+The script automatically evaluates and corrects each task against the ARC-AGI ground-truth test grid and generates **5 dedicated CSV spreadsheets inside the `Results/` folder**:
+1. `Results/<output>_accuracy.csv`: Contains whether the model got the problem right (`CORRECT` / `INCORRECT`) and the final batch accuracy (`Batch Accuracy: XX.XX% (Y/Z)`).
+2. `Results/<output>_tokens.csv`: Contains the tokens breakdown per task (`Total: X (Prompt: Y, Resposta: Z, Pensamento: W)`) and the cumulative batch sum (`Tokens do Batch`).
+3. `Results/<output>_reasoning.csv`: Contains only the summary of the reasoning behind the answer.
+4. `Results/<output>_grids.csv`: Contains only the predicted matrices/grids.
+5. `Results/<output>_times.csv`: Contains only the timers (`Total: XX.XXs (Raciocínio: YY.YYs, Formatação: ZZ.ZZs)`) and the cumulative batch sum (`Tempo do Batch`).
 
 ## Additional Codes
+### task_generator.py (ARC Task Generator & 2D Transformer)
+Generates new ARC tasks by applying 2D transformations (Rotations, Reflections, Colorations, Merged) to original tasks from `data/`:
+```bash
+# Generate 10 random transformed tasks
+python task_generator.py --num-tasks 10
+
+# Generate 20 tasks with Rotation on input and Reflection on output
+python task_generator.py --input-transform rotation --output-transform reflection --num-tasks 20
+
+# Generate tasks for all 800 problems in data/ with coloration
+python task_generator.py --transform coloration --num-tasks all
+
+# Generate merged transformations (combinations of 2 distinct transforms)
+python task_generator.py --transform merged --num-tasks 15
+```
+Tasks are automatically saved in categorized folders:
+* `New Tasks/Rotation/`: Rotation-only transforms
+* `New Tasks/Reflexion/`: Reflection-only transforms
+* `New Tasks/Coloration/`: Color permutation transforms
+* `New Tasks/Merged/`: Composite or mixed transforms
+
+All transformations are tracked and deduplicated in `New Tasks/transformed_tasks.csv`.
+
 ### check_models.py
 * You can use this code to check out all possible models available for the API, and its formal names.
 
