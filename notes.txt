@@ -1,0 +1,8 @@
+A API do Google não retorna um campo nativo como server_thinking_time_ms no JSON. No entanto, por utilizarmos uma arquitetura em 2 etapas no 
+
+solver.py
+:
+
+Etapa 1 (Raciocínio / High Thinking): Mede o tempo exato em que o modelo ficou processando o grid e gerando os tokens de pensamento (por exemplo, 225.54s no teste anterior). O overhead de rede representa apenas ~0.1s a 0.2s; mais de 99% desse tempo é o processamento do raciocínio nos chips do Google.
+
+Etapa 2 (Extração / Formatação): Mede apenas o tempo que o modelo levou para estruturar o <prediction> final (apenas 5.10s).

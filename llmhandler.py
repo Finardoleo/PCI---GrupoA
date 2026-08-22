@@ -7,13 +7,29 @@ import re
 
 load_dotenv()
 
-# Alterado de generate_text para generate_chat
-def generate_chat(contents: list, model: str = None, api_key: str = None, max_tokens: int = 4096, temperature: float = 0.6) -> str:
+def generate_chat(
+    contents: list,
+    model: str = None,
+    api_key: str = None,
+    max_tokens: int = 16384,
+    temperature: float = 0.6,
+    thinking_level: str = None,
+    thinking_budget: int = None,
+    rate_limit_delay: float = 15.0
+) -> dict:
+    """
+    Envia uma requisição para a API Google Gemini / Gemma.
+    Retorna um dicionário contendo:
+      - text: string de resposta do modelo
+      - tokens: dicionário com prompt, candidates, thoughts e total
+      - latency: tempo puro da requisição à API (em segundos, sem delay)
+      - raw: resposta bruta da API
+    """
     api_key = api_key or os.getenv("GEMMA_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-    model = model or os.getenv("GEMMA_MODEL", "gemma-2-27b-it")
+    model = model or os.getenv("GEMMA_MODEL", "gemma-4-31b-it")
     
     if not api_key:
-        raise RuntimeError("API KEY environment variable is not set no .env")
+        raise RuntimeError("API KEY environment variable is not set in .env")
     
     endpoint_override = os.getenv("GEMMA_ENDPOINT")
 
@@ -22,14 +38,37 @@ def generate_chat(contents: list, model: str = None, api_key: str = None, max_to
     else:
         model_name = str(model)
 
-    # Agora passamos o array 'contents' diretamente para o payload
+    generation_config = {
+        "temperature": temperature,
+        "candidateCount": 1,
+        "maxOutputTokens": max_tokens
+    }
+
+    # Configuração do Thinking Mode
+    if thinking_level is None and thinking_budget is None:
+        thinking_level = os.getenv("THINKING_LEVEL", "HIGH")
+
+    if thinking_budget is not None:
+        generation_config["thinkingConfig"] = {
+            "thinkingBudget": thinking_budget
+        }
+    elif thinking_level:
+        thinking_str = str(thinking_level).strip().upper()
+        if "gemini-2.5" in model_name.lower():
+            if thinking_str in ["OFF", "MINIMAL", "0"]:
+                generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+            else:
+                generation_config["thinkingConfig"] = {"thinkingBudget": -1}
+        else:
+            if thinking_str in ["OFF", "0"]:
+                thinking_str = "MINIMAL"
+            generation_config["thinkingConfig"] = {
+                "thinkingLevel": thinking_str
+            }
+
     payload = {
         "contents": contents,
-        "generationConfig": {
-            "temperature": temperature,
-            "candidateCount": 1,
-            "maxOutputTokens": max_tokens
-        }
+        "generationConfig": generation_config
     }
 
     if endpoint_override:
@@ -49,13 +88,15 @@ def generate_chat(contents: list, model: str = None, api_key: str = None, max_to
     last_resp = None
     last_error_detail = ""
     j = None
+    api_latency = 0.0
     
     for url in endpoints:
         try:
+            req_start = time.time()
             resp = requests.post(url, json=payload, timeout=300)
+            req_duration = time.time() - req_start
             last_resp = resp
             
-            # Se não for sucesso (200), guarda o texto do erro para mostrar
             if resp.status_code != 200:
                 last_error_detail = resp.text
                 
@@ -63,35 +104,67 @@ def generate_chat(contents: list, model: str = None, api_key: str = None, max_to
                 continue
                 
             resp.raise_for_status()
+            api_latency = req_duration
             
             try:
                 j = resp.json()
             except ValueError:
                 j = None
             break
-        except requests.RequestException as e:
+        except requests.RequestException:
             continue
 
     if j is None:
         error_msg = f"Failed to get a valid response from the API.\nÚltimo status: {getattr(last_resp, 'status_code', 'N/A')}\nDetalhes do Erro da API: {last_error_detail}"
         raise RuntimeError(error_msg)
 
+    # Extração de tokens do usageMetadata
+    usage = j.get("usageMetadata", {}) if isinstance(j, dict) else {}
+    prompt_tokens = usage.get("promptTokenCount", 0)
+    candidates_tokens = usage.get("candidatesTokenCount", 0)
+    thoughts_tokens = usage.get("thoughtsTokenCount", 0)
+    total_tokens = usage.get("totalTokenCount", prompt_tokens + candidates_tokens + thoughts_tokens)
+
+    tokens_info = {
+        "prompt": prompt_tokens,
+        "candidates": candidates_tokens,
+        "thoughts": thoughts_tokens,
+        "total": total_tokens
+    }
+
+    # Extração do texto
     out = None
     if isinstance(j, dict):
         candidates = j.get("candidates", [])
         if candidates:
-            try:
-                out = candidates[0]["content"]["parts"][0]["text"]
-            except (KeyError, IndexError, TypeError):
-                pass
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text_parts = []
+            thought_parts = []
+            for p in parts:
+                if isinstance(p, dict):
+                    if p.get("thought", False):
+                        thought_parts.append(p.get("text", ""))
+                    elif "text" in p:
+                        text_parts.append(p.get("text", ""))
+            
+            if text_parts:
+                out = "".join(text_parts).strip()
+            elif thought_parts:
+                out = "".join(thought_parts).strip()
                 
     if out is None:
         out = json.dumps(j)
 
-    try:
-        # Delay de 15 segundos mantido para evitar Rate Limit da API do Google
-        time.sleep(15)
-    except Exception:
-        pass
+    # Rate limiting delay (executado após registrar a latência pura da requisição)
+    if rate_limit_delay > 0:
+        try:
+            time.sleep(rate_limit_delay)
+        except Exception:
+            pass
 
-    return out
+    return {
+        "text": out,
+        "tokens": tokens_info,
+        "latency": api_latency,
+        "raw": j
+    }
