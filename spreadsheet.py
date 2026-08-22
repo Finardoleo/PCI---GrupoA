@@ -1,4 +1,5 @@
 import os
+import threading
 from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ load_dotenv()
 
 SUMMARY_ROW_NAMES = ["Batch Accuracy", "Tempo do Batch", "Tokens do Batch"]
 DEFAULT_RESULTS_DIR = "Results"
+CSV_FILE_LOCK = threading.Lock()
 
 def resolve_spreadsheet_paths(base_filename: str) -> Tuple[Path, str]:
     """
@@ -125,6 +127,7 @@ def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col
 def save_entry_to_csv(filepath: str, task_name: str, model_col_name: str, value: str, append: bool):
     """
     Salva ou anexa uma linha em um arquivo CSV de forma idempotente, mantendo linhas de resumo ao final.
+    Operação thread-safe utilizando CSV_FILE_LOCK.
     """
     Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     df_new = pd.DataFrame({
@@ -132,29 +135,30 @@ def save_entry_to_csv(filepath: str, task_name: str, model_col_name: str, value:
         model_col_name: [value]
     })
     
-    if append and os.path.exists(filepath):
-        try:
-            df_existing = pd.read_csv(filepath)
-            if model_col_name not in df_existing.columns:
-                df_existing[model_col_name] = pd.NA
-                
-            if task_name in df_existing["Task"].values:
-                df_existing.loc[df_existing["Task"] == task_name, model_col_name] = value
-            else:
-                # Se não é uma linha de resumo, insere antes de quaisquer linhas de resumo já existentes
-                if task_name not in SUMMARY_ROW_NAMES:
-                    is_summary = df_existing["Task"].isin(SUMMARY_ROW_NAMES)
-                    task_rows = df_existing[~is_summary]
-                    summary_df = df_existing[is_summary]
-                    df_existing = pd.concat([task_rows, df_new, summary_df], ignore_index=True)
-                else:
-                    df_existing = pd.concat([df_existing, df_new], ignore_index=True)
+    with CSV_FILE_LOCK:
+        if append and os.path.exists(filepath):
+            try:
+                df_existing = pd.read_csv(filepath)
+                if model_col_name not in df_existing.columns:
+                    df_existing[model_col_name] = pd.NA
                     
-            df_existing.to_csv(filepath, index=False)
-        except Exception as e:
-            print(f"Erro ao salvar no CSV ({filepath}): {e}")
-    else:
-        df_new.to_csv(filepath, index=False)
+                if task_name in df_existing["Task"].values:
+                    df_existing.loc[df_existing["Task"] == task_name, model_col_name] = value
+                else:
+                    # Se não é uma linha de resumo, insere antes de quaisquer linhas de resumo já existentes
+                    if task_name not in SUMMARY_ROW_NAMES:
+                        is_summary = df_existing["Task"].isin(SUMMARY_ROW_NAMES)
+                        task_rows = df_existing[~is_summary]
+                        summary_df = df_existing[is_summary]
+                        df_existing = pd.concat([task_rows, df_new, summary_df], ignore_index=True)
+                    else:
+                        df_existing = pd.concat([df_existing, df_new], ignore_index=True)
+                        
+                df_existing.to_csv(filepath, index=False)
+            except Exception as e:
+                print(f"Erro ao salvar no CSV ({filepath}): {e}")
+        else:
+            df_new.to_csv(filepath, index=False)
 
 def save_task_to_split_spreadsheets(base_filename: str, task_name: str, result: dict, append: bool):
     """

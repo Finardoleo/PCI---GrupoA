@@ -124,7 +124,7 @@ def build_reasoning_prompt(task: dict) -> str:
     )
     return s
 
-def solve_task(path):
+def solve_task(path, api_key: str = None):
     task = load_json(path)
     reasoning_prompt = build_reasoning_prompt(task)
     
@@ -143,7 +143,7 @@ def solve_task(path):
         chat_1 = [{"role": "user", "parts": [{"text": reasoning_prompt}]}]
         
         print(f"  Etapa 1: Pensando com High Thinking...")
-        res_1 = generate_chat(chat_1, temperature=0.6, max_tokens=16384, thinking_level="HIGH")
+        res_1 = generate_chat(chat_1, api_key=api_key, temperature=0.6, max_tokens=16384, thinking_level="HIGH")
         raw_thought = res_1["text"]
         latency_1 = res_1["latency"]
         total_latency += latency_1
@@ -177,7 +177,7 @@ Inverted the colors and shifted diagonal pixels down by one.
         chat_2 = [{"role": "user", "parts": [{"text": formatting_prompt}]}]
         
         print(f"  Etapa 2: Formatando a saída (Thinking: MINIMAL)...")
-        res_2 = generate_chat(chat_2, temperature=0.1, max_tokens=8192, thinking_level="MINIMAL")
+        res_2 = generate_chat(chat_2, api_key=api_key, temperature=0.1, max_tokens=8192, thinking_level="MINIMAL")
         raw_prediction = res_2["text"]
         latency_2 = res_2["latency"]
         total_latency += latency_2

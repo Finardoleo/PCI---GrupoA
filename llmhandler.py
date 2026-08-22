@@ -4,8 +4,47 @@ import requests
 import json
 import time
 import re
+from typing import List
 
 load_dotenv()
+
+class QuotaExhaustedError(RuntimeError):
+    """Lançado quando uma chave de API atinge a cota máxima de tokens ou requisições por minuto (HTTP 429)."""
+    pass
+
+class InvalidApiKeyError(RuntimeError):
+    """Lançado quando uma chave de API é inválida ou não autorizada (HTTP 400/403)."""
+    pass
+
+def get_available_api_keys() -> List[str]:
+    """
+    Descobre e retorna a lista de chaves de API válidas configuradas no .env.
+    Verifica GEMINI_API_KEY_1 a 4, além de chaves únicas como GEMINI_API_KEY.
+    """
+    keys = []
+    # 1. Procura pelas 4 chaves numeradas
+    for i in range(1, 5):
+        k = os.getenv(f"GEMINI_API_KEY_{i}")
+        if k and k.strip() and not k.strip().startswith("your_"):
+            keys.append(k.strip())
+            
+    # 2. Se nenhuma numerada foi achada, procura pelas chaves padrão
+    if not keys:
+        for fallback_var in ["GEMINI_API_KEY", "GOOGLE_API_KEY", "GEMMA_API_KEY"]:
+            k = os.getenv(fallback_var)
+            if k and k.strip() and not k.strip().startswith("your_"):
+                keys.append(k.strip())
+                break
+                
+    # Remove duplicatas preservando a ordem
+    unique_keys = list(dict.fromkeys(keys))
+    return unique_keys
+
+def mask_api_key(key: str) -> str:
+    """Retorna uma versão mascarada da chave para logs seguros (ex: AQ...hWg)."""
+    if not key or len(key) < 8:
+        return "****"
+    return f"{key[:4]}...{key[-4:]}"
 
 def generate_chat(
     contents: list,
@@ -26,12 +65,14 @@ def generate_chat(
       - latency: tempo puro da requisição à API (em segundos, sem delay)
       - raw: resposta bruta da API
     """
-    api_key = api_key or os.getenv("GEMMA_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-    model = model or os.getenv("GEMMA_MODEL", "gemma-4-31b-it")
-    
     if not api_key:
-        raise RuntimeError("API KEY environment variable is not set in .env")
-    
+        available = get_available_api_keys()
+        if available:
+            api_key = available[0]
+        else:
+            raise RuntimeError("Nenhuma API KEY válida foi configurada no .env")
+            
+    model = model or os.getenv("GEMMA_MODEL", "gemma-4-31b-it")
     endpoint_override = os.getenv("GEMMA_ENDPOINT")
 
     if str(model).startswith("models/"):
@@ -103,6 +144,16 @@ def generate_chat(
                 req_duration = time.time() - req_start
                 last_resp = resp
                 
+                # Identifica 429 Quota Exceeded
+                if resp.status_code == 429:
+                    last_error_detail = f"Quota Exceeded (HTTP 429): {resp.text}"
+                    raise QuotaExhaustedError(last_error_detail)
+                    
+                # Identifica chave inválida (400 ou 403)
+                if resp.status_code in [400, 403] and ("API_KEY_INVALID" in resp.text or "not valid" in resp.text.lower()):
+                    last_error_detail = f"Chave Inválida (HTTP {resp.status_code}): {resp.text}"
+                    raise InvalidApiKeyError(last_error_detail)
+                
                 if resp.status_code != 200:
                     last_error_detail = resp.text
                     
@@ -117,6 +168,8 @@ def generate_chat(
                 except ValueError:
                     j = None
                 break
+            except (QuotaExhaustedError, InvalidApiKeyError):
+                raise
             except requests.RequestException as e:
                 last_error_detail = f"Erro de conexão/requisição: {e}"
                 continue
@@ -124,14 +177,14 @@ def generate_chat(
         if j is not None:
             break
             
-        # Se falhou e ainda tem tentativas, aguarda antes de tentar de novo
+        # Se falhou por erro de rede e ainda tem tentativas, aguarda antes de tentar de novo
         if attempt < max_retries:
             wait_time = attempt * 5
-            print(f"  [!] Falha na tentativa {attempt}/{max_retries}. Aguardando {wait_time}s para tentar novamente...")
+            print(f"  [!] Falha na tentativa {attempt}/{max_retries} (Chave {mask_api_key(api_key)}). Aguardando {wait_time}s para tentar novamente...")
             time.sleep(wait_time)
 
     if j is None:
-        error_msg = f"Failed to get a valid response from the API.\nÚltimo status: {getattr(last_resp, 'status_code', 'N/A')}\nDetalhes do Erro da API: {last_error_detail}"
+        error_msg = f"Failed to get a valid response from the API (Key: {mask_api_key(api_key)}).\nÚltimo status: {getattr(last_resp, 'status_code', 'N/A')}\nDetalhes do Erro da API: {last_error_detail}"
         raise RuntimeError(error_msg)
 
     # Extração de tokens do usageMetadata

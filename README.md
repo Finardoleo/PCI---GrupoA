@@ -31,20 +31,19 @@ pip install -r requirements.txt
 ```
 
 **3. Configure your environment variables**
-This project requires a .env file to securely load your API keys. 
+This project supports up to 4 Google Gemini API keys in `.env` to enable parallel problem solving:
 - Copy the provided template file:
 ```bash
   copy .env.example .env
 ```
-- Open the new .env file in your text editor.
-- Replace your_api_key_here with your actual Google Gemini API key.
+- Open `.env` and fill in `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`, and/or `GEMINI_API_KEY_4`.
 
 **4. Add your data**
 Ensure your ARC-AGI JSON task files (like 00dbd492.json) are placed within the data/ directory.
 
 ## Usage
 
-The application features a 15-second delay between API requests to prevent rate-limiting from the Google API. You can run the solver in two modes:
+The application features per-key rate-limiting delays and automatic circuit breaking if a key hits quota limits.
 
 ### Single Task Mode
 To evaluate a single JSON file, run:
@@ -53,35 +52,36 @@ python main.py --mode single --input data/training/00dbd492.json --output result
 ```
 
 ### Batch Mode (List from file)
-To evaluate multiple tasks listed in a `.txt` file sequentially:
+To evaluate multiple tasks listed in a `.txt` file:
 ```bash
-python main.py --mode batch --input tasks.txt --output batch_results.csv
+python main.py --mode batch --input tasks.txt --output batch_results.csv --workers 4
 ```
 
 ### All Dataset Mode (Run all problems in `data/`)
 To automatically discover and evaluate all ARC tasks in the `data/` directory (with immediate persistence after every task):
 ```bash
-# Run all 800 tasks (training + evaluation)
-python main.py --mode all --output all_results.csv
+# Run all 800 tasks in parallel (up to 4 workers)
+python main.py --mode all --output all_results.csv --workers 4
 
 # Or run only training tasks (400 tasks)
-python main.py --mode all --split training --output train_results.csv
+python main.py --mode all --split training --output train_results.csv --workers 4
 
 # Or run only evaluation tasks (400 tasks)
-python main.py --mode all --split evaluation --output eval_results.csv
+python main.py --mode all --split evaluation --output eval_results.csv --workers 4
 ```
 
 ### Retry Modes (Re-run Failed Tasks)
 To re-run only tasks that failed in an existing spreadsheet:
 ```bash
 # 1. Re-run ALL incorrect/failed tasks from the spreadsheet
-python main.py --output batch_results.csv --retry incorrect
+python main.py --output batch_results.csv --retry incorrect --workers 4
 
 # 2. Re-run ONLY tasks that failed with 'Insufficient data' in reasoning
-python main.py --output batch_results.csv --retry insufficient
+python main.py --output batch_results.csv --retry insufficient --workers 4
 ```
 
 ### Additional Flags
+* `--workers`: Number of simultaneous parallel workers (1 to 4). Defaults to the number of active API keys configured in `.env`.
 * `--new`: Overwrite existing CSV spreadsheets and restart from scratch.
 * `--retry {incorrect, insufficient}`: Filter and re-execute only failed tasks.
 
