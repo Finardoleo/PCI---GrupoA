@@ -76,7 +76,7 @@ To re-run only tasks that failed in an existing spreadsheet:
 # 1. Re-run ALL incorrect/failed tasks from the spreadsheet
 python main.py --output batch_results.csv --retry incorrect --workers 4
 
-# 2. Re-run ONLY tasks that failed with 'Insufficient data' in reasoning
+# 2. Re-run ONLY tasks that failed with 'Insufficient data' in reasoning OR experienced an error (ERROR)
 python main.py --output batch_results.csv --retry insufficient --workers 4
 ```
 

@@ -116,7 +116,12 @@ def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col
                 tasks_to_retry.append(task_name)
             elif retry_mode == "insufficient":
                 rea_val = reasoning_map.get(task_name, "").lower()
-                if "insufficient data" in rea_val:
+                status_lower = status_val.lower()
+                
+                has_insufficient = "insufficient data" in rea_val
+                has_error = "error" in status_lower or "erro" in status_lower or "error" in rea_val or "erro" in rea_val
+                
+                if has_insufficient or has_error:
                     tasks_to_retry.append(task_name)
                     
         return tasks_to_retry
