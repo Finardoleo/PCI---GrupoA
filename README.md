@@ -57,6 +57,16 @@ To evaluate multiple tasks listed in a `.txt` file:
 python main.py --mode batch --input tasks.txt --output batch_results.csv --workers 4
 ```
 
+### Folder Mode (Run all problems in any specific folder)
+To evaluate all ARC JSON tasks from any specific folder (like `New Tasks/Rotation`, `Answered Correctly Training Tasks`, etc.):
+```bash
+# Run all tasks from New Tasks/Rotation
+python main.py --mode folder --input "New Tasks/Rotation" --output rotation_results.csv --workers 4
+
+# Run all tasks from Answered Correctly Training Tasks
+python main.py --mode folder --input "Answered Correctly Training Tasks" --output correct_eval_results.csv --workers 4
+```
+
 ### All Dataset Mode (Run all problems in `data/`)
 To automatically discover and evaluate all ARC tasks in the `data/` directory (with immediate persistence after every task):
 ```bash

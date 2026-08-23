@@ -190,23 +190,26 @@ def find_task_filepath(task_name: str, data_dir: str = "data") -> str:
     return task_name
 
 def collect_all_tasks(data_dir: str = "data", split: str = "all") -> list:
-    """Descobre recursivamente todas as tasks JSON na pasta data."""
+    """Descobre recursivamente todas as tasks JSON no diretório informado."""
     base_path = Path(data_dir)
     tasks = []
     
+    if not base_path.exists():
+        print(f"[!] Diretório não encontrado: {data_dir}")
+        return []
+    
     if split == "training":
-        search_patterns = [base_path / "training" / "*.json"]
+        search_patterns = [str(base_path / "training" / "*.json")]
     elif split == "evaluation":
-        search_patterns = [base_path / "evaluation" / "*.json"]
+        search_patterns = [str(base_path / "evaluation" / "*.json")]
     else:
         search_patterns = [
-            base_path / "training" / "*.json",
-            base_path / "evaluation" / "*.json",
-            base_path / "*.json"
+            str(base_path / "*.json"),
+            str(base_path / "**" / "*.json")
         ]
         
     for pattern in search_patterns:
-        matched = glob.glob(str(pattern))
+        matched = glob.glob(pattern, recursive=True)
         for p in matched:
             tasks.append(p.replace("\\", "/"))
             
@@ -367,10 +370,10 @@ def run_tasks_batch(
 
 def main():
     parser = argparse.ArgumentParser(description="ARC-AGI Solver")
-    parser.add_argument("--mode", choices=['single', 'batch', 'all'], required=False, default='all',
-                        help="Modo de execução: single (1 task), batch (lista em arquivo .txt), all (todas as tasks da pasta data)")
+    parser.add_argument("--mode", choices=['single', 'batch', 'all', 'folder', 'dir'], required=False, default='all',
+                        help="Modo de execução: single (1 task), batch (lista em .txt), all/folder (todas as tasks do diretório informado em --input)")
     parser.add_argument("--input", default="data", 
-                        help="Caminho do arquivo JSON (single), arquivo .txt (batch) ou pasta do dataset (all)")
+                        help="Caminho do arquivo JSON (single), arquivo .txt (batch) ou pasta de tasks (all/folder)")
     parser.add_argument("--split", choices=['all', 'training', 'evaluation'], default='all',
                         help="Filtro para o modo all: 'training', 'evaluation' ou 'all' (padrão: all)")
     parser.add_argument("--output", default="results.csv", 
@@ -428,8 +431,8 @@ def main():
         print(f"[+] Iniciando modo BATCH com {len(tasks)} tasks listadas em '{args.input}'...")
         run_tasks_batch(tasks, args.output, args.new, max_workers=args.workers)
         
-    elif args.mode == 'all':
-        print(f"[+] Escaneando dataset em '{data_dir}' (Split: {args.split})...")
+    elif args.mode in ['all', 'folder', 'dir']:
+        print(f"[+] Escaneando tasks no diretório '{data_dir}' (Split: {args.split})...")
         tasks = collect_all_tasks(data_dir=data_dir, split=args.split)
         print(f"[+] Encontradas {len(tasks)} tasks para processamento.")
         run_tasks_batch(tasks, args.output, args.new, max_workers=args.workers)
