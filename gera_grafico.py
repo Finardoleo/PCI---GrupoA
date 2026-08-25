@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -60,5 +61,6 @@ axes[1].grid(axis='y', linestyle='--', alpha=0.7)
 
 # 4. Ajustes Finais e Renderização
 plt.tight_layout()
-plt.savefig("benchmark_modelos_arc.png", dpi=300)
+os.makedirs("Results", exist_ok=True)
+plt.savefig("Results/benchmark_modelos_arc.png", dpi=300)
 plt.show()

@@ -1,0 +1,11 @@
+Task,gemma-4-31b-it
+3aa6fb7a.json,"Identify all 2x2 squares containing exactly three cells of color 8 and one cell of color 0, and change the color 0 cell to 1."
+44d8ac46.json,"Identify enclosed black cells (0) within grey shapes (5). If the enclosed cells form a perfect square, replace them with red cells (2); otherwise, they remain black."
+44f52bb0.json,"If the pattern of 2s in the grid is symmetric both horizontally and vertically, the output is 1; otherwise, the output is 7."
+0a938d79.json,"Identify two colored pixels (y1, x1, c1) and (y2, x2, c2). Calculate dx = |x2-x1| and dy = |y2-y1|. If dx < dy (or dx=0), fill columns x1, x1+dx, x1+2dx... with alternating colors c1, c2... If dy < dx (or dy=0), fill rows y1, y1+dy, y1+2dy... with alternating colors c1, c2..."
+0b148d64.json,Insufficient data provided to determine a rule.
+00576224.json,"The output is a 3x3 tiling of the 2x2 input block, where the top and bottom rows of blocks are the original input and the middle row of blocks is the input block flipped horizontally."
+0a1d4ef5.json,Extract the colors of monochromatic rectangular blocks and arrange them into a grid based on their relative spatial positions (rows and columns) in the input.
+0b17323b.json,"Continue the arithmetic progression of '1's on the main diagonal (x, x) by placing '2's at subsequent positions until the grid boundary is reached."
+0bb8deee.json,"The input grid is divided into four quadrants by a cross. For each quadrant, the smallest 3x3 bounding box containing the colored shape is extracted. These four 3x3 blocks are then tiled into a 6x6 output grid (TL, TR, BL, BR)."
+0becf7df.json,"The top-left 2x2 grid acts as a color mapping key where (0,0) swaps with (0,1) and (1,0) swaps with (1,1). This mapping is applied to all pixels outside the 2x2 key."

@@ -1,0 +1,12 @@
+Task,gemma-4-31b-it
+3aa6fb7a.json,CORRECT
+44d8ac46.json,CORRECT
+44f52bb0.json,CORRECT
+0a938d79.json,CORRECT
+0b148d64.json,INCORRECT
+00576224.json,CORRECT
+0a1d4ef5.json,CORRECT
+0b17323b.json,CORRECT
+0bb8deee.json,CORRECT
+0becf7df.json,CORRECT
+Batch Accuracy,90.00% (9/10)
