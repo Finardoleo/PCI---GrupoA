@@ -174,19 +174,45 @@ def worker_task_wrapper(task_path: str, output_file: str, append: bool, key_mgr:
         return error_result
 
 def find_task_filepath(task_name: str, data_dir: str = "data") -> str:
-    """Localiza o caminho completo de um arquivo JSON pelo nome da task."""
+    """
+    Localiza o caminho completo de um arquivo JSON pelo nome da task,
+    buscando na pasta informada, em todas as subpastas de New Tasks,
+    em Answered Tasks e no dataset data/.
+    """
     if os.path.exists(task_name):
         return task_name.replace("\\", "/")
         
-    for sub in ["training", "evaluation", ""]:
-        candidate = os.path.join(data_dir, sub, task_name)
-        if os.path.exists(candidate):
-            return candidate.replace("\\", "/")
+    candidate_roots = [
+        data_dir,
+        "New Tasks/Rotation",
+        "New Tasks/Reflexion",
+        "New Tasks/Coloration",
+        "New Tasks/Merged",
+        "New Tasks",
+        "Answered Correctly Training Tasks",
+        "Answered Incorrectly Training Tasks",
+        "data/training",
+        "data/evaluation",
+        "data"
+    ]
+    
+    # 1. Busca direta nas pastas candidatas
+    for root in candidate_roots:
+        if not os.path.exists(root):
+            continue
+        direct = os.path.join(root, task_name)
+        if os.path.exists(direct):
+            return direct.replace("\\", "/")
+        matches = glob.glob(f"{root}/**/{task_name}", recursive=True)
+        if matches:
+            return matches[0].replace("\\", "/")
             
-    matches = glob.glob(f"{data_dir}/**/{task_name}", recursive=True)
-    if matches:
-        return matches[0].replace("\\", "/")
-        
+    # 2. Busca global recursiva no workspace (ignorando pastas de sistema/resultados)
+    all_matches = glob.glob(f"**/{task_name}", recursive=True)
+    for m in all_matches:
+        if not any(ign in m for ign in [".git", "__pycache__", "Results", "venv", ".vscode"]):
+            return m.replace("\\", "/")
+            
     return task_name
 
 def collect_all_tasks(data_dir: str = "data", split: str = "all") -> list:
@@ -403,7 +429,7 @@ def main():
         
         if len(valid_tasks) < len(resolved_tasks):
             missing = set(resolved_tasks) - set(valid_tasks)
-            print(f"[!] Aviso: {len(missing)} arquivos JSON não foram localizados na pasta data: {missing}")
+            print(f"[!] Aviso: {len(missing)} arquivos JSON não foram localizados no workspace: {missing}")
             
         run_tasks_batch(valid_tasks, args.output, is_new=False, is_retry=True, max_workers=args.workers)
         return
