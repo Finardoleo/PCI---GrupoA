@@ -149,12 +149,18 @@ def build_composed_transformation(transform_choice: str) -> Tuple[str, List[str]
     choice = transform_choice.strip().lower()
     
     if choice in ["merged", "merge"]:
-        # Escolhe 2 transformações não-identidade distintas
-        pool = ROTATION_TRANSFORMS + REFLECTION_TRANSFORMS + COLORATION_TRANSFORMS
-        t1, t2 = random.sample(pool, 2)
+        # Escolhe 2 transformações não-identidade de famílias distintas (Rotação, Reflexão, Coloração)
+        families_pool = [
+            ("Rotation", ROTATION_TRANSFORMS),
+            ("Reflexion", REFLECTION_TRANSFORMS),
+            ("Coloration", COLORATION_TRANSFORMS)
+        ]
+        fam_sample = random.sample(families_pool, 2)
+        _, pool1 = fam_sample[0]
+        _, pool2 = fam_sample[1]
         
-        name1, fam1, func1 = t1
-        name2, fam2, func2 = t2
+        name1, fam1, func1 = random.choice(pool1)
+        name2, fam2, func2 = random.choice(pool2)
         
         families = [fam1, fam2]
         desc = f"{name1}+{name2}"
