@@ -14,18 +14,113 @@ def grid_to_text(grid):
         return "\n".join(" ".join(str(x) for x in row) for row in grid)
     return " ".join(str(x) for x in grid)
 
+
+def _normalize_prediction_value(value):
+    """Converts the model output into a grid-like structure when needed."""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        if value and isinstance(value[0], list):
+            return value
+        if value and isinstance(value[0], (int, float)):
+            return [value]
+        return value
+    if isinstance(value, tuple):
+        return [_normalize_prediction_value(item) for item in value]
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        compact = value.strip()
+        if not compact:
+            return None
+        try:
+            parsed = json.loads(compact)
+            return _normalize_prediction_value(parsed)
+        except Exception:
+            numbers = re.findall(r"-?\d+", compact)
+            if numbers:
+                if "\n" in compact or " " in compact:
+                    rows = []
+                    for line in compact.splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        row_numbers = re.findall(r"-?\d+", line)
+                        if row_numbers:
+                            rows.append([int(n) for n in row_numbers])
+                    return rows if rows else [int(n) for n in numbers]
+                return [int(n) for n in numbers]
+            return compact
+    return value
+
+
+def extract_prediction_payload(text: str):
+    """Extracts a structured JSON payload from noisy model output and normalizes it."""
+    if not isinstance(text, str):
+        return {"summary": "", "prediction": None}
+
+    cleaned = text.strip()
+
+    if not cleaned:
+        return {"summary": "", "prediction": None}
+
+    json_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if json_match:
+        candidate = json_match.group(0)
+        try:
+            parsed = json.loads(candidate)
+            if isinstance(parsed, dict):
+                summary = str(parsed.get("summary", "")).strip()
+                prediction = _normalize_prediction_value(parsed.get("prediction"))
+                return {"summary": summary, "prediction": prediction}
+        except Exception:
+            pass
+
+    summary_match = re.search(r"<summary>(.*?)</summary>", cleaned, re.DOTALL | re.IGNORECASE)
+    pred_match = re.search(r"<prediction>(.*?)</prediction>", cleaned, re.DOTALL | re.IGNORECASE)
+
+    summary = summary_match.group(1).strip() if summary_match else ""
+    prediction_raw = pred_match.group(1).strip() if pred_match else cleaned
+
+    prediction = _normalize_prediction_value(prediction_raw)
+    if isinstance(prediction, str):
+        try:
+            parsed = json.loads(prediction)
+            prediction = _normalize_prediction_value(parsed)
+        except Exception:
+            pass
+
+    if isinstance(prediction, list) and prediction and isinstance(prediction[0], list):
+        final_prediction = prediction
+    elif isinstance(prediction, list) and prediction and isinstance(prediction[0], (int, float)):
+        final_prediction = [prediction]
+    else:
+        final_prediction = prediction
+
+    return {"summary": summary, "prediction": final_prediction}
+
+
 def parse_grid_from_text(text: str):
     """
     Converte uma string contendo um grid ou valores numéricos em uma lista 2D de inteiros.
     """
-    # Extrai o conteúdo dentro de <prediction> se existir
-    pred_match = re.search(r"<prediction>(.*?)</prediction>", text, re.DOTALL | re.IGNORECASE)
-    content = pred_match.group(1).strip() if pred_match else text.strip()
-    
-    # Remove blocos markdown caso existam
+    if not text or not isinstance(text, str):
+        return []
+
+    structured = extract_prediction_payload(text)
+    if structured.get("prediction") is not None:
+        prediction = structured["prediction"]
+        if isinstance(prediction, list):
+            if prediction and isinstance(prediction[0], list):
+                return prediction
+            if prediction and isinstance(prediction[0], (int, float)):
+                return [prediction]
+        if isinstance(prediction, (int, float)):
+            return [[prediction]]
+
+    content = text.strip()
     content = re.sub(r"```(?:json|python)?", "", content).replace("```", "").strip()
-    
-    # Tenta carregar como JSON direto
+
     try:
         loaded = json.loads(content)
         if isinstance(loaded, list):
@@ -34,8 +129,7 @@ def parse_grid_from_text(text: str):
             return [[loaded]]
     except Exception:
         pass
-        
-    # Extrai linhas de números inteiros
+
     grid = []
     for line in content.splitlines():
         line = line.strip()
@@ -44,63 +138,59 @@ def parse_grid_from_text(text: str):
         numbers = re.findall(r"-?\d+", line)
         if numbers:
             grid.append([int(n) for n in numbers])
-            
+
     return grid
+
 
 def extract_tags(text: str):
     """
     Extrai o resumo e a previsão de forma limpa.
     Retorna (summary_str, prediction_grid_str, formatted_full_str).
     """
-    summary_match = re.search(r"<summary>(.*?)</summary>", text, re.DOTALL | re.IGNORECASE)
-    pred_match = re.search(r"<prediction>(.*?)</prediction>", text, re.DOTALL | re.IGNORECASE)
-    
-    summary = summary_match.group(1).strip() if summary_match else ""
-    
-    if pred_match:
-        prediction_str = pred_match.group(1).strip()
-    else:
-        # Fallback para blocos de código ou texto limpo
-        code_match = re.search(r"```(?:json|python)?\s*(.*?)\s*```", text, re.DOTALL)
-        prediction_str = code_match.group(1).strip() if code_match else text.strip()
+    payload = extract_prediction_payload(text)
+    summary = payload.get("summary", "")
+    prediction = payload.get("prediction")
+    prediction_str = json.dumps(prediction, ensure_ascii=False) if prediction is not None else ""
 
-    # Monta a versão formatada
     formatted_parts = []
     if summary:
         formatted_parts.append(f"<summary>\n{summary}\n</summary>")
     formatted_parts.append(f"<prediction>\n{prediction_str}\n</prediction>")
-    
+
     return summary, prediction_str, "\n\n".join(formatted_parts)
+
 
 def evaluate_prediction(task: dict, raw_prediction: str):
     """
     Compara o grid predito com o ground truth de test[0]['output'].
     Retorna (is_correct, status_str, clean_grid_str, clean_summary_str).
     """
-    summary_str, pred_str, _ = extract_tags(raw_prediction)
+    payload = extract_prediction_payload(raw_prediction)
+    summary_str = payload.get("summary", "")
+    pred_value = payload.get("prediction")
+    pred_str = json.dumps(pred_value, ensure_ascii=False) if pred_value is not None else raw_prediction
     parsed_grid = parse_grid_from_text(pred_str if pred_str else raw_prediction)
-    
+
     test_cases = task.get("test", [])
     if not test_cases or "output" not in test_cases[0]:
         return False, "UNKNOWN", pred_str, summary_str
-        
+
     ground_truth = test_cases[0]["output"]
-    
     is_correct = (parsed_grid == ground_truth)
     status_str = "CORRECT" if is_correct else "INCORRECT"
-    
-    # Se conseguiu fazer parse do grid, formata bonito, senão mantém a string original
+
     if parsed_grid:
         clean_grid_str = grid_to_text(parsed_grid)
     else:
         clean_grid_str = pred_str
-        
+
     return is_correct, status_str, clean_grid_str, summary_str
+
 
 def build_reasoning_prompt(task: dict) -> str:
     train = task.get("train", [])
     test = task.get("test", [])
-    
+
     s = (
         "You are an expert puzzle solver for the ARC dataset.\n"
         "Analyze the following training examples and determine the underlying logical rule.\n"
@@ -120,7 +210,10 @@ def build_reasoning_prompt(task: dict) -> str:
 
     s += (
         "What is the logical rule, and what is the exact final grid for the TEST INPUT?\n"
-        "Conclude your reasoning with the predicted output grid enclosed in <prediction>...</prediction> tags."
+        "Your final answer must be a single JSON object with exactly these keys:\n"
+        "{\"summary\": \"short rule description\", \"prediction\": [[...], [...]]}\n"
+        "Do not include any extra prose, markdown fences, explanations, self-checks, or confirmation text.\n"
+        "The answer must be valid JSON only."
     )
     return s
 
@@ -157,22 +250,18 @@ def solve_task(path, api_key: str = None):
         print("---------------------\n")
         
         # ETAPA 2: Extração e Formatação Estrita (Thinking Mode: MINIMAL para evitar monólogo interno)
-        formatting_prompt = f"""You are a strict data parser. Your ONLY job is to extract the final predicted grid or scalar value from the reasoning text provided below, along with a concise summary of the rule.
-Output ONLY the <summary>...</summary> block and the <prediction>...</prediction> block. Do NOT include conversational text.
+        example_json = '{"summary":"Inverted the colors and shifted diagonal pixels down by one.","prediction":[[0,1,0],[1,0,1],[0,1,0]]}'
+        formatting_prompt = f"""You are a strict post-processor. Ignore all conversational chatter, self-checks, and confirmations.
+Your ONLY job is to extract the final answer from the reasoning text below and return it as valid JSON.
+Return ONLY one JSON object with keys "summary" and "prediction".
+No markdown fences, no tags, no extra prose, no explanations.
+
+Example output:
+{example_json}
 
 [REASONING TEXT BEGIN]
 {raw_thought}
-[REASONING TEXT END]
-
-Example Output Format:
-<summary>
-Inverted the colors and shifted diagonal pixels down by one.
-</summary>
-<prediction>
-0 1 0
-1 0 1
-0 1 0
-</prediction>"""
+[REASONING TEXT END]"""
         
         chat_2 = [{"role": "user", "parts": [{"text": formatting_prompt}]}]
         
