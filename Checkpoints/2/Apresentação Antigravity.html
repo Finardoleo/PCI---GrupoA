@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação: Benchmark ARC-AGI e Transformações 2D (Gemma 31B)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0F19;
+            --surface: #131B2E;
+            --surface-hover: #1E293B;
+            --border: #1E293B;
+            --border-glow: #38BDF8;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent-blue: #38BDF8;
+            --accent-green: #34D399;
+            --accent-orange: #FB923C;
+            --accent-red: #F87171;
+            --accent-purple: #A78BFA;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Presentation Container */
+        .presentation {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem;
+        }
+
+        .slide {
+            position: absolute;
+            width: 90vw;
+            max-width: 1400px;
+            height: 84vh;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3.5rem 4rem;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(56, 189, 248, 0.05);
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.99);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3,
+        .brand-font {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        .slide-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.1);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            width: fit-content;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .slide-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 0.75rem;
+            line-height: 1.15;
+        }
+
+        .slide-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            flex: 1;
+            align-items: center;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card h4 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 0.75rem;
+        }
+
+        .card p,
+        .card li {
+            font-size: 0.95rem;
+            color: #CBD5E1;
+            line-height: 1.55;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border-radius: 18px;
+            padding: 1.75rem;
+            border: 1px solid var(--border);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card.blue::before {
+            background: var(--accent-blue);
+        }
+
+        .stat-card.orange::before {
+            background: var(--accent-orange);
+        }
+
+        .stat-card.green::before {
+            background: var(--accent-green);
+        }
+
+        .stat-card.red::before {
+            background: var(--accent-red);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.6rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card.blue .stat-value {
+            color: var(--accent-blue);
+        }
+
+        .stat-card.orange .stat-value {
+            color: var(--accent-orange);
+        }
+
+        .stat-card.green .stat-value {
+            color: var(--accent-green);
+        }
+
+        .stat-card.red .stat-value {
+            color: var(--accent-red);
+        }
+
+        .stat-desc {
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+
+        /* Image Display */
+        .image-container {
+            width: 100%;
+            height: 100%;
+            max-height: 480px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        /* Code Block */
+        pre,
+        code {
+            font-family: 'Fira Code', monospace;
+            background: #090D16;
+            color: #38BDF8;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        pre {
+            padding: 1rem;
+            border: 1px solid #1E293B;
+            overflow-x: auto;
+            line-height: 1.45;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--accent-blue);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover td {
+            background: rgba(30, 41, 59, 0.4);
+        }
+
+        /* Footer Controls */
+        .controls {
+            height: 65px;
+            background: #090D16;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 3rem;
+            z-index: 10;
+        }
+
+        .btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-blue);
+            color: #0F172A;
+            border-color: var(--accent-blue);
+        }
+
+        .slide-counter {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #1E293B;
+            z-index: 999;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+            transition: width 0.3s ease;
+        }
+
+        .highlight-box {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1rem 1.25rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #E2E8F0;
+        }
+
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .bullet-list li {
+            position: relative;
+            padding-left: 1.75rem;
+            font-size: 1rem;
+            color: #CBD5E1;
+            line-height: 1.5;
+        }
+
+        .bullet-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <!-- SLIDE 1: Capa -->
+        <div class="slide active">
+            <div
+                style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <div class="slide-tag">PCI - Projeto em Ciência e Inovação</div>
+                <h1
+                    style="font-size: 3.4rem; font-weight: 800; max-width: 1000px; margin: 1.25rem 0 0.75rem; background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    A Robustez de LLMs sob Perturbações Espaciais no ARC-AGI
+                </h1>
+                <p style="font-size: 1.25rem; color: #94A3B8; max-width: 800px; margin-bottom: 2.25rem;">
+                    Investigando Memorização, Viés Geométrico e Degradação de Raciocínio em Modelos com Chain of Thought
+                    (Gemma 31B)
+                </p>
+
+                <div
+                    style="display: flex; gap: 3rem; margin-bottom: 2rem; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); padding: 1.25rem 2.5rem; border-radius: 16px;">
+                    <div style="text-align: left;">
+                        <div
+                            style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-blue); font-weight: 700; margin-bottom: 0.35rem;">
+                            👨‍🎓 Alunos</div>
+                        <div style="font-size: 1rem; color: #F8FAFC; font-weight: 600;">Gabriel, Leonardo e Luis</div>
+                    </div>
+                    <div style="width: 1px; background: var(--border);"></div>
+                    <div style="text-align: left;">
+                        <div
+                            style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-green); font-weight: 700; margin-bottom: 0.35rem;">
+                            👨‍🏫 Professores</div>
+                        <div style="font-size: 1rem; color: #F8FAFC; font-weight: 600;">André, Érica, João e Frederico
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 2rem; color: #64748B; font-size: 0.9rem; font-weight: 500;">
+                    <span>🎓 <strong>UFRGS</strong> - Bacharelado em Ciência da Computação</span>
+                    <span>🤖 <strong>Modelo:</strong> gemma-4-31b-it (High Thinking)</span>
+                    <span>📊 <strong>Amostras:</strong> 1.600+ Inferências Avaliadas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Metodologia e Pipeline -->
+        <div class="slide">
+            <div class="slide-tag">Metodologia Experimental</div>
+            <h2 class="slide-title">Arquitetura Experimental em 2 Etapas</h2>
+            <p class="slide-subtitle">Isolamento rigoroso entre raciocínio profundo e formatação estruturada de matrizes
+            </p>
+
+            <div class="grid-2">
+                <div class="bullet-list">
+                    <li><strong>Dataset Base:</strong> 400 tasks de treino originais do ARC-AGI avaliadas com Gemma 31B
+                        (76.00% acurácia base - 304 acertos).</li>
+                    <li><strong>Isolamento de Amostras para Teste:</strong> Apenas os <strong>304 problemas
+                            acertados</strong> foram submetidos às perturbações para testar a perda real de
+                        generalização.</li>
+                    <li><strong>Pool Paralelo Multi-Chaves com Circuit Breaker:</strong> 4 chaves de API isoladas
+                        executando requisições com controle de cotas (16K TPM).</li>
+                </div>
+                <div class="card">
+                    <h4>🔬 Pipeline de Execução (solver.py)</h4>
+                    <div
+                        style="background: #090D16; padding: 1.25rem; border-radius: 12px; border: 1px solid #1E293B; margin-bottom: 1rem;">
+                        <p style="color: var(--accent-blue); font-weight: 700; margin-bottom: 0.25rem;">Etapa 1: High
+                            Thinking CoT (Temperatura T = 0.6, 16k tokens)</p>
+                        <p style="color: #94A3B8; font-size: 0.85rem;">Exploração de hipóteses, deduções de simetria e
+                            raciocínio espacial profundo (~200s - 800s).</p>
+                    </div>
+                    <div style="background: #090D16; padding: 1.25rem; border-radius: 12px; border: 1px solid #1E293B;">
+                        <p style="color: var(--accent-green); font-weight: 700; margin-bottom: 0.25rem;">Etapa 2:
+                            Extração Numérica (Thinking: MINIMAL, Temperatura T = 0.0)</p>
+                        <p style="color: #94A3B8; font-size: 0.85rem;">Formatação pura e determinística (greedy) da
+                            predição final em bloco numérico &lt;prediction&gt; sem nova carga de raciocínio (~4s).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Como Funcionam as Transformações 2D (Visual) -->
+        <div class="slide">
+            <div class="slide-tag">Geração das Novas Tasks</div>
+            <h2 class="slide-title">Mecanismo das Transformações 2D (task_generator.py)</h2>
+            <p class="slide-subtitle">Como as matrizes originais foram manipuladas para criar novos desafios com
+                invariância e perturbação</p>
+
+            <div class="grid-4" style="margin-top: 0.5rem;">
+                <!-- Card 1: Rotação -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h4 style="color: var(--accent-orange);">🔄 1. Rotação Espacial</h4>
+                        <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">Gira as matrizes em <strong>90° CW, 180°
+                                ou 270° (90° CCW)</strong> mantendo a conectividade relativa.</p>
+                    </div>
+                    <div
+                        style="background: #090D16; border: 1px solid #1E293B; border-radius: 8px; padding: 0.75rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.3; text-align: center;">
+                        <div style="color: #64748B; font-size: 0.7rem; margin-bottom: 4px;">Original → 90° Horário</div>
+                        <span style="color: #38BDF8;">1 2 0</span> &nbsp;→&nbsp; <span style="color: #FB923C;">0 4
+                            1</span><br>
+                        <span style="color: #38BDF8;">4 5 0</span> &nbsp;→&nbsp; <span style="color: #FB923C;">0 5
+                            2</span><br>
+                        <span style="color: #38BDF8;">0 0 0</span> &nbsp;→&nbsp; <span style="color: #FB923C;">0 0
+                            0</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Reflexão -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h4 style="color: var(--accent-green);">🪞 2. Reflexão / Espelho</h4>
+                        <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">Espelhamento <strong>Horizontal</strong>
+                            (inverte colunas) ou <strong>Vertical</strong> (inverte linhas).</p>
+                    </div>
+                    <div
+                        style="background: #090D16; border: 1px solid #1E293B; border-radius: 8px; padding: 0.75rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.3; text-align: center;">
+                        <div style="color: #64748B; font-size: 0.7rem; margin-bottom: 4px;">Original → Espelho Horiz.
+                        </div>
+                        <span style="color: #38BDF8;">1 2 0</span> &nbsp;→&nbsp; <span style="color: #34D399;">0 2
+                            1</span><br>
+                        <span style="color: #38BDF8;">4 0 0</span> &nbsp;→&nbsp; <span style="color: #34D399;">0 0
+                            4</span><br>
+                        <span style="color: #38BDF8;">3 3 0</span> &nbsp;→&nbsp; <span style="color: #34D399;">0 3
+                            3</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Permutação de Cores -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h4 style="color: var(--accent-purple);">🎨 3. Permutação de Cores</h4>
+                        <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">Mapeamento bijetivo que permuta a paleta
+                            (ex: <code>2→4</code>, <code>3→8</code>), preservando o fundo <code>0</code>.</p>
+                    </div>
+                    <div
+                        style="background: #090D16; border: 1px solid #1E293B; border-radius: 8px; padding: 0.75rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.3; text-align: center;">
+                        <div style="color: #64748B; font-size: 0.7rem; margin-bottom: 4px;">Paleta [1→7, 2→3]</div>
+                        <span style="color: #38BDF8;">1 1 2</span> &nbsp;→&nbsp; <span style="color: #A78BFA;">7 7
+                            3</span><br>
+                        <span style="color: #38BDF8;">0 2 0</span> &nbsp;→&nbsp; <span style="color: #A78BFA;">0 3
+                            0</span><br>
+                        <span style="color: #38BDF8;">2 0 1</span> &nbsp;→&nbsp; <span style="color: #A78BFA;">3 0
+                            7</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Merged -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h4 style="color: var(--accent-red);">🧬 4. Merged (Compostas)</h4>
+                        <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">Composição combinando 2 famílias (ex:
+                            <strong>Giro 90° CW + Cores [1→7, 2→4, 3→8]</strong>).
+                        </p>
+                    </div>
+                    <div
+                        style="background: #090D16; border: 1px solid #1E293B; border-radius: 8px; padding: 0.75rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.3; text-align: center;">
+                        <div style="color: #64748B; font-size: 0.7rem; margin-bottom: 4px;">Original → Giro 90° + Cor
+                        </div>
+                        <span style="color: #38BDF8;">1 2 0</span> &nbsp;→&nbsp; <span style="color: #F87171;">0 0
+                            7</span><br>
+                        <span style="color: #38BDF8;">0 3 0</span> &nbsp;→&nbsp; <span style="color: #F87171;">0 8
+                            4</span><br>
+                        <span style="color: #38BDF8;">0 0 0</span> &nbsp;→&nbsp; <span style="color: #F87171;">0 0
+                            0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 1.25rem;">
+                <strong>⚙️ Consistência nos Exemplos:</strong> Ao transformar uma task, a mesma regra é aplicada
+                deterministicamente em todos os pares de demonstração (<code>train</code>) e no input/output de teste
+                (<code>test</code>), garantindo que a task continue logicamente solucionável.
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Resultados Globais -->
+        <div class="slide">
+            <div class="slide-tag">Resultados Globais</div>
+            <h2 class="slide-title">Panorama Comparativo de Desempenho</h2>
+            <p class="slide-subtitle">Como as perturbações 2D impactam a Acurácia, o Consumo de Tokens e o Tempo</p>
+
+            <div class="grid-4">
+                <div class="stat-card blue">
+                    <div class="stat-label">Original (Treino)</div>
+                    <div class="stat-value">76.0%</div>
+                    <div class="stat-desc">304 / 400 Acertos<br>12.810 tokens | 262s méd.</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-label">Reflected</div>
+                    <div class="stat-value">70.4%</div>
+                    <div class="stat-desc">214 / 304 Acertos<br>13.645 tokens | 304s méd.</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-label">Rotated</div>
+                    <div class="stat-value">61.2%</div>
+                    <div class="stat-desc">186 / 304 Acertos<br>15.420 tokens | 321s méd.</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-label">Merged (Compostas)</div>
+                    <div class="stat-value">44.5%</div>
+                    <div class="stat-desc">263 / 591 Acertos<br>16.222 tokens | 370s méd.</div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 1.75rem;">
+                <strong>💡 Conclusão Primária dos Dados:</strong> Todas as tasks rotacionadas, refletidas e merged foram
+                criadas a partir de problemas que o Gemma <strong>já havia acertado no original</strong>. A queda
+                acentuada para 61.2% (rotação) e 44.5% (merged) comprova que o modelo não possui invariância espacial
+                genuína.
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Dashboard Gráfico -->
+        <div class="slide">
+            <div class="slide-tag">Evidência Visual</div>
+            <h2 class="slide-title">Dashboard Comparativo Geral (3-em-1)</h2>
+            <p class="slide-subtitle">Correlação simultânea entre Acurácia, Volume de Pensamento (Tokens) e Latência de
+                Inferência</p>
+
+            <div class="image-container">
+                <img src="benchmark_gemma_dashboard.png" alt="Dashboard Benchmark Gemma">
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Hipótese 1 - Memorização vs Raciocínio -->
+        <div class="slide">
+            <div class="slide-tag">Análise Teórica & Hipóteses</div>
+            <h2 class="slide-title">Hipótese 1: Memorização Prévia vs. Demonstrações</h2>
+            <p class="slide-subtitle">O fenômeno do <em>Prior Memorization Override</em> (Contaminação de Treinamento)
+            </p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🧠 O que a Teoria prevê?</h4>
+                    <p>Grandes Modelos de Linguagem são expostos a repositórios do ARC-AGI durante o pré-treinamento.
+                        Quando a task original é apresentada, o modelo muitas vezes não "induz a regra do zero", mas
+                        recupera um padrão pré-indexado de sua memória associativa.</p>
+                    <div class="highlight-box" style="margin-top: 1rem;">
+                        <strong>Efeito Perturbação:</strong> Ao modificarmos as cores ou a orientação dos grids,
+                        quebramos a correspondência canônica. O modelo sofre uma colisão cognitiva entre <em>o que ele
+                            memorizou</em> e <em>o que as novas demonstrações mostram</em>.
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>🔍 O que os Dados revelaram?</h4>
+                    <ul class="bullet-list">
+                        <li>Em tasks compostas (Merged), o modelo frequentemente reconhece a "família" da task, mas
+                            <strong>reproduz no raciocínio a regra de cores da task original</strong> em vez da nova
+                            regra demonstrada no JSON.
+                        </li>
+                        <li>Isso explica a queda dramática de <strong>76.0% para 44.5%</strong> em Merged, acompanhada
+                            pelo maior gasto de tokens (16.222), pois o modelo entra em conflito e tenta reconciliar
+                            premissas incompatíveis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Estudo de Caso 1 - Merged Task -->
+        <div class="slide">
+            <div class="slide-tag">Estudo de Caso Real</div>
+            <h2 class="slide-title">Caso Real 1: Merged Task <code>d965528e.json</code></h2>
+            <p class="slide-subtitle">Evidência explícita de memorização da regra da task original
+                (<code>f1cefba8.json</code>)</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>📄 O Raciocínio gerado pelo Modelo (LLM Reasoning)</h4>
+                    <pre><code>"Transpose the grid. The inner rectangle of the output 
+takes the color of the input's outer rectangle (A). 
+The outer rectangle of the output takes a transformed 
+color of the input's inner rectangle (B), 
+following the cycle 2 -> 3 -> 8 -> 2 (and 4 -> 4)."</code></pre>
+                    <div class="highlight-box" style="border-left-color: var(--accent-red); margin-top: 1rem;">
+                        <strong>🚨 O Erro Fatal:</strong> O ciclo <code>2 -> 3 -> 8 -> 2</code> pertencia à task
+                        original! No novo JSON gerado, esse ciclo foi alterado pela permutação de cores. O modelo
+                        ignorou os exemplos de treino e aplicou a memória pré-treinada cegamente.
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>🎯 Diagnóstico da Falha</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Acerto Espacial:</strong> O modelo acertou a transposição geométrica (input 18x19
+                            virou output 19x18).</li>
+                        <li><strong>Falha Semântica:</strong> A ancoragem de cores foi contaminada pela memória da base
+                            do ARC.</li>
+                        <li><strong>Typos Visuais:</strong> O modelo "comeu" pixels nas bordas (imprimiu
+                            <code>0 0 0 2 1 1...</code> em vez de <code>0 0 0 2 2 1...</code>), rompendo a continuidade
+                            geométrica.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Hipótese 2 - Viés de Fechamento Geométrico -->
+        <div class="slide">
+            <div class="slide-tag">Análise Teórica & Hipóteses</div>
+            <h2 class="slide-title">Hipótese 2: Viés de Fechamento Geométrico</h2>
+            <p class="slide-subtitle">Alucinação por "Overfitting Topológico" em Formas Abertas</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>📐 A Indução por Conectividade</h4>
+                    <p>Modelos de linguagem treinados em dados 2D sofrem de um forte viés de preenchimento ("Gestalt
+                        Prior"): a tendência de assumir que grupos de pixels pertencem a contornos fechados (caixas,
+                        retângulos, polígonos completos).</p>
+                    <div class="highlight-box" style="margin-top: 1rem;">
+                        Quando a regra lógica estrita exige apenas conectar pontos colineares (formando uma linha ou um
+                        "L"), o modelo muitas vezes alucina conexões extras para "fechar o retângulo".
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>🔍 O Caso da Task Rotacionada</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Regra Real:</strong> "Se dois pontos da mesma cor compartilham linha ou coluna,
+                            conecte-os".</li>
+                        <li><strong>Pontos do Input:</strong> Três pontos em <code>(3,6)</code>, <code>(15,6)</code> e
+                            <code>(15,21)</code>. A união lógica forma estritamente um <strong>"L"</strong>.
+                        </li>
+                        <li><strong>O que o Modelo fez:</strong> Inventou uma barra horizontal na linha 3 e uma vertical
+                            na coluna 21, desenhando uma <strong>caixa retangular fechada</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Hipótese 3 - Discretização sob Reflexão -->
+        <div class="slide">
+            <div class="slide-tag">Análise Teórica & Hipóteses</div>
+            <h2 class="slide-title">Hipótese 3: Discretização e Erros de Off-By-One</h2>
+            <p class="slide-subtitle">Estudo de Caso na Task Refletida <code>0ac8ac11.json</code></p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>📝 Regra Perfeita vs. Execução Falha</h4>
+                    <p>Na task <code>0ac8ac11.json</code>, o modelo deduziu a regra com perfeição em linguagem natural:
+                    </p>
+                    <pre><code>"Identify columns containing color 5, rank them 
+by height in descending order, and replace color 5 
+with colors 1, 2, 3, and 4 respectively based on that rank."</code></pre>
+                    <p style="margin-top: 0.75rem; color: #94A3B8; font-size: 0.9rem;">No entanto, o grid gerado foi
+                        classificado como <strong>INCORRECT</strong> por severos erros de indexação espacial.</p>
+                </div>
+                <div class="card">
+                    <h4>❌ Erros Concretos da Matriz Gerada</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Alucinação de Posições:</strong> Criou colunas nas posições
+                            <code>0, 2, 4 e 7</code>, enquanto as posições reais refletidas eram
+                            <code>1, 3, 5 e 7</code>.
+                        </li>
+                        <li><strong>Erro de Altura (+1 pixel):</strong> As alturas reais eram <code>8, 7, 5 e 3</code>.
+                            A IA gerou alturas <code>9, 8, 6 e 4</code>.</li>
+                        <li><strong>Inversão de Ranking:</strong> Atribuiu a cor 1 à 3ª maior coluna devido à confusão
+                            com a inversão horizontal de coordenadas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 10: Conclusões Finais -->
+        <div class="slide">
+            <div class="slide-tag">Conclusão</div>
+            <h2 class="slide-title">Conclusões e Próximos Passos</h2>
+            <p class="slide-subtitle">O que os experimentos revelam sobre a verdadeira inteligência de LLMs no ARC-AGI?
+            </p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🚩 Principais Descobertas</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Falsa Invariância Espacial:</strong> LLMs com CoT não possuem representação espacial
+                            contínua; perturbações 2D simples degradam o acerto em até <strong>31,5 pontos percentuais
+                                (de 76,0% para 44,5%)</strong>.</li>
+                        <li><strong>Contaminação de Treino como Muleta:</strong> A acurácia original de 76% é inflada
+                            pela memorização prévia dos benchmarks.</li>
+                        <li><strong>Raciocínio Linguístico ≠ Execução Matricial:</strong> O modelo frequentemente acerta
+                            a descrição textual da regra, mas erra a transposição para matrizes numéricas.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🚀 Próximos Passos</h4>
+                    <ul class="bullet-list">
+                        <li><strong>Avaliação Comparativa com Gemini 3.5 Flash Lite:</strong> Executar todo o
+                            pipeline experimental (Original, Rotação, Reflexão e Merged) no modelo Gemini Flash Lite.
+                        </li>
+                        <li><strong>Comparação de Memorização vs. Arquitetura:</strong> Investigar se modelos menores ou
+                            mais rápidos apresentam maior ou menor dependência de memorização canônica em relação ao
+                            Gemma 31B.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls">
+        <button class="btn" id="prevBtn" onclick="prevSlide()">← Anterior</button>
+        <div class="slide-counter" id="slideCounter">Slide 1 / 10</div>
+        <button class="btn" id="nextBtn" onclick="nextSlide()">Próximo →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+
+        function updateSlide() {
+            slides.forEach((s, idx) => {
+                s.classList.toggle('active', idx === currentSlide);
+            });
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+            slideCounter.innerText = `Slide ${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+
+</html>
