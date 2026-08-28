@@ -102,14 +102,22 @@ def generate_unique_id(existing_ids: Set[str], data_dir: str = "data", output_di
 def transform_task(
     task_data: dict,
     in_choice: str,
-    out_choice: str
+    out_choice: str,
+    same_transform: bool = False
 ) -> Tuple[dict, str, str, str]:
     """
     Aplica as transformações no input e output de uma task.
+    Se same_transform for True ou in_choice == out_choice (diferente de random/merged),
+    aplica EXATAMENTE a mesma transformação atômica/composta para ambos input e output.
     Retorna (novo_task_data, categoria, in_desc_final, out_desc_final).
     """
-    in_desc, in_fams, in_func = build_composed_transformation(in_choice)
-    out_desc, out_fams, out_func = build_composed_transformation(out_choice)
+    if same_transform or (in_choice == out_choice and in_choice not in ['random', 'merged']):
+        trans_desc, trans_fams, trans_func = build_composed_transformation(in_choice)
+        in_desc, in_fams, in_func = trans_desc, trans_fams, trans_func
+        out_desc, out_fams, out_func = trans_desc, trans_fams, trans_func
+    else:
+        in_desc, in_fams, in_func = build_composed_transformation(in_choice)
+        out_desc, out_fams, out_func = build_composed_transformation(out_choice)
     
     category = determine_category(in_fams, out_fams)
     
@@ -196,11 +204,13 @@ def run_generator(
             
         # Tenta gerar uma transformação única (até 15 tentativas para evitar duplicatas exatas)
         success = False
+        is_same = (input_transform == output_transform and input_transform not in ['random', 'merged'])
         for attempt in range(15):
             new_task_data, category, in_desc, out_desc = transform_task(
                 orig_data,
                 in_choice=input_transform,
-                out_choice=output_transform
+                out_choice=output_transform,
+                same_transform=is_same
             )
             
             combo = (orig_filename, in_desc, out_desc)
