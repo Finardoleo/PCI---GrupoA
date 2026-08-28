@@ -215,9 +215,24 @@ def find_task_filepath(task_name: str, data_dir: str = "data") -> str:
             
     return task_name
 
+def resolve_directory_path(input_dir: str) -> str:
+    """Resolve diretórios aceitando variações comuns como Reflection vs Reflexion."""
+    if os.path.isdir(input_dir):
+        return input_dir
+        
+    # Tenta variações conhecidas (ex: New Tasks/Reflection -> New Tasks/Reflexion)
+    lower_str = input_dir.replace("\\", "/").lower()
+    if "reflection" in lower_str and os.path.isdir("New Tasks/Reflexion"):
+        return "New Tasks/Reflexion"
+    if "reflexion" in lower_str and os.path.isdir("New Tasks/Reflection"):
+        return "New Tasks/Reflection"
+        
+    return input_dir
+
 def collect_all_tasks(data_dir: str = "data", split: str = "all") -> list:
     """Descobre recursivamente todas as tasks JSON no diretório informado."""
-    base_path = Path(data_dir)
+    resolved_dir = resolve_directory_path(data_dir)
+    base_path = Path(resolved_dir)
     tasks = []
     
     if not base_path.exists():
@@ -413,7 +428,9 @@ def main():
     
     args = parser.parse_args()
     model_name = os.getenv("GEMMA_MODEL", "AI_Model")
-    data_dir = args.input if os.path.isdir(args.input) else "data"
+    
+    resolved_input = resolve_directory_path(args.input)
+    data_dir = resolved_input if os.path.isdir(resolved_input) else "data"
     
     # Modo de Retry
     if args.retry:
@@ -458,6 +475,10 @@ def main():
         run_tasks_batch(tasks, args.output, args.new, max_workers=args.workers)
         
     elif args.mode in ['all', 'folder', 'dir']:
+        if not os.path.isdir(resolved_input) and args.mode in ['folder', 'dir']:
+            print(f"[!] ERRO: O diretório especificado em --input '{args.input}' não foi encontrado no disco.")
+            return
+            
         print(f"[+] Escaneando tasks no diretório '{data_dir}' (Split: {args.split})...")
         tasks = collect_all_tasks(data_dir=data_dir, split=args.split)
         print(f"[+] Encontradas {len(tasks)} tasks para processamento.")
