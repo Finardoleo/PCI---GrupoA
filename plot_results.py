@@ -15,6 +15,7 @@ PALETTE = {
     "Training": "#3B82F6",    # Blue 500
     "Rotated": "#F59E0B",     # Amber 500
     "Reflected": "#10B981",   # Emerald 500
+    "Coloration": "#8B5CF6",  # Purple 500
     "Merged": "#EF4444",      # Red 500
     "Default": "#6366F1",     # Indigo 500
 }
@@ -23,6 +24,7 @@ DATASET_ORDER = [
     ("Training Data Set", "Original (Treino)", "Training"),
     ("Rotated Training Data Set", "Rotated", "Rotated"),
     ("Reflected Training Data Set", "Reflected", "Reflected"),
+    ("Coloration Training Data Set", "Coloration", "Coloration"),
     ("Merged Training Data Set", "Merged", "Merged"),
 ]
 
