@@ -101,11 +101,14 @@ def discover_model_datasets(model_dir: str) -> List[Tuple[str, str, str]]:
 
 def extract_dataset_metrics(
     folder_path: str,
-    meta_map: Dict[str, str]
+    meta_map: Dict[str, str],
+    only_correct: bool = False
 ) -> Optional[Dict[str, Any]]:
     """
     Lê as planilhas _accuracy.csv, _tokens.csv e _times.csv da pasta e extrai
     todas as estatísticas requeridas.
+    Se only_correct for True, o cálculo de médias e totais de tokens e tempo
+    é aplicado exclusivamente às tasks com status 'CORRECT'.
     """
     acc_files = glob.glob(f"{folder_path}/*_accuracy.csv")
     tok_files = glob.glob(f"{folder_path}/*_tokens.csv")
@@ -161,8 +164,14 @@ def extract_dataset_metrics(
     incorrect_count = total_tasks - correct_count
     accuracy_pct = (correct_count / total_tasks * 100.0) if total_tasks > 0 else 0.0
 
-    avg_tokens = float(merged["tokens"].mean()) if total_tasks > 0 else 0.0
-    avg_time = float(merged["time_s"].mean()) if total_tasks > 0 else 0.0
+    # Base de cálculo para médias e totais de tokens/tempo
+    eval_df = merged[merged["is_correct"]].copy() if only_correct else merged.copy()
+    eval_count = len(eval_df)
+
+    avg_tokens = float(eval_df["tokens"].mean()) if eval_count > 0 else 0.0
+    total_tokens = int(eval_df["tokens"].sum()) if eval_count > 0 else 0
+    avg_time = float(eval_df["time_s"].mean()) if eval_count > 0 else 0.0
+    total_time = float(eval_df["time_s"].sum()) if eval_count > 0 else 0.0
 
     corr_df = merged[merged["is_correct"]]
     incorr_df = merged[~merged["is_correct"]]
@@ -190,9 +199,13 @@ def extract_dataset_metrics(
         "total_tasks": total_tasks,
         "correct_count": correct_count,
         "incorrect_count": incorrect_count,
+        "eval_count": eval_count,
+        "only_correct": only_correct,
         "accuracy_pct": accuracy_pct,
         "avg_tokens": avg_tokens,
+        "total_tokens": total_tokens,
         "avg_time": avg_time,
+        "total_time": total_time,
         "max_tok_corr": max_tok_corr,
         "min_tok_corr": min_tok_corr,
         "max_tok_incorr": max_tok_incorr,
@@ -201,26 +214,31 @@ def extract_dataset_metrics(
         "max_tim_incorr": max_tim_incorr,
     }
 
-def print_summary_table(model_name: str, datasets_data: List[Tuple[str, str, Dict[str, Any]]]):
+def print_summary_table(model_name: str, datasets_data: List[Tuple[str, str, Dict[str, Any]]], only_correct: bool = False):
     """Imprime um sumário executivo detalhado no terminal."""
-    print("\n" + "="*95)
+    filter_label = "APENAS TASKS CORRETAS (CORRECT)" if only_correct else "TODAS AS TASKS AVALIADAS"
+    print("\n" + "="*110)
     print(f"   RELATÓRIO COMPARATIVO DE BENCHMARK ARC-AGI - MODELO: {model_name.upper()}")
-    print("="*95)
+    print(f"   [FILTRO DE TOKENS/TEMPO: {filter_label}]")
+    print("="*110)
     
-    header = f"{'Dataset':<20} | {'Tasks':<7} | {'Acurácia (%)':<15} | {'Média Tokens':<14} | {'Média Tempo (s)':<15}"
+    header = f"{'Dataset':<20} | {'Tasks':<7} | {'Acurácia (%)':<15} | {'Base Métricas':<14} | {'Média Tokens':<14} | {'Total Tokens':<14} | {'Média Tempo':<12} | {'Tempo Total'}"
     print(header)
-    print("-" * 95)
+    print("-" * 110)
     
     for label, _, data in datasets_data:
         acc_str = f"{data['accuracy_pct']:.2f}% ({data['correct_count']}/{data['total_tasks']})"
+        base_str = f"{data['eval_count']} tasks"
         tok_str = f"{data['avg_tokens']:,.1f}"
+        tot_tok_str = f"{data['total_tokens']:,}"
         tim_str = f"{data['avg_time']:.2f}s"
-        print(f"{label:<20} | {data['total_tasks']:<7} | {acc_str:<15} | {tok_str:<14} | {tim_str:<15}")
+        tot_tim_str = f"{data['total_time']:.1f}s"
+        print(f"{label:<20} | {data['total_tasks']:<7} | {acc_str:<15} | {base_str:<14} | {tok_str:<14} | {tot_tok_str:<14} | {tim_str:<12} | {tot_tim_str}")
         
-    print("-" * 95)
-    print("\n" + "="*95)
+    print("-" * 110)
+    print("\n" + "="*110)
     print("   EXTREMOS DE TOKENS E TEMPO (MIN / MAX COM TASKS ORIGINAIS)")
-    print("="*95)
+    print("="*110)
     
     for label, _, data in datasets_data:
         print(f"\n[{label.upper()}]")
@@ -246,7 +264,7 @@ def print_summary_table(model_name: str, datasets_data: List[Tuple[str, str, Dic
             r = data["max_tim_incorr"]
             print(f"    - Máx [INCORRECT]: {r['value']:.2f}s | Task: {r['task_id']} (Orig: {r['original_task']})")
 
-    print("\n" + "="*95)
+    print("\n" + "="*110)
 
 def plot_accuracy_chart(
     model_name: str,
@@ -302,12 +320,14 @@ def plot_accuracy_chart(
 def plot_tokens_chart(
     model_name: str,
     datasets_data: List[Tuple[str, str, Dict[str, Any]]],
-    output_path: str
+    output_path: str,
+    only_correct: bool = False
 ):
     """Gera o gráfico de barras comparativo de Tokens Médios por Task."""
     labels = [d[0] for d in datasets_data]
     colors = [PALETTE.get(d[1], PALETTE["Default"]) for d in datasets_data]
     avg_tokens = [d[2]["avg_tokens"] for d in datasets_data]
+    counts = [(d[2]["eval_count"], d[2]["total_tasks"]) for d in datasets_data]
 
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, ax = plt.subplots(figsize=(10, 6.5), dpi=300)
@@ -317,30 +337,33 @@ def plot_tokens_chart(
 
     bars = ax.bar(x, avg_tokens, width=width, color=colors, edgecolor="#1E293B", linewidth=1.2, zorder=3)
 
-    for bar, tok in zip(bars, avg_tokens):
+    for bar, tok, (ev_c, tot_c) in zip(bars, avg_tokens, counts):
         y_val = bar.get_height()
+        sub_txt = f"({ev_c} corretas)" if only_correct else f"({tot_c} tasks)"
         ax.text(
             bar.get_x() + bar.get_width() / 2.0,
             y_val + max(avg_tokens) * 0.03,
-            f"{tok:,.0f}\ntokens",
+            f"{tok:,.0f}\ntokens\n{sub_txt}",
             ha="center",
             va="bottom",
-            fontsize=11,
+            fontsize=10,
             fontweight="bold",
             color="#0F172A",
             bbox=dict(boxstyle="round,pad=0.25", facecolor="#FFFFFF", alpha=0.9, edgecolor="#E2E8F0", linewidth=0.8),
             zorder=4
         )
 
-    ax.set_title(f"Consumo Médio de Tokens por Task - Modelo: {model_name}", fontsize=15, fontweight="bold", pad=20)
+    title_suffix = "(Apenas Tasks Corretas)" if only_correct else "(Todas as Tasks)"
+    ax.set_title(f"Consumo Médio de Tokens por Task {title_suffix} - Modelo: {model_name}", fontsize=14, fontweight="bold", pad=20)
     ax.set_ylabel("Média de Tokens por Task", fontsize=12, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
-    ax.set_ylim(0, max(avg_tokens) * 1.30 if avg_tokens else 1000)
+    ax.set_ylim(0, max(avg_tokens) * 1.35 if avg_tokens else 1000)
     ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
 
     mean_tok = np.mean(avg_tokens) if avg_tokens else 0
-    ax.axhline(mean_tok, color="#64748B", linestyle=":", linewidth=1.5, label=f"Média Geral: {mean_tok:,.0f}", zorder=2)
+    legend_label = f"Média Geral (Corretas): {mean_tok:,.0f}" if only_correct else f"Média Geral: {mean_tok:,.0f}"
+    ax.axhline(mean_tok, color="#64748B", linestyle=":", linewidth=1.5, label=legend_label, zorder=2)
     ax.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.9)
 
     plt.tight_layout()
@@ -351,12 +374,14 @@ def plot_tokens_chart(
 def plot_time_chart(
     model_name: str,
     datasets_data: List[Tuple[str, str, Dict[str, Any]]],
-    output_path: str
+    output_path: str,
+    only_correct: bool = False
 ):
     """Gera o gráfico de barras comparativo de Tempo Médio (s) por Task."""
     labels = [d[0] for d in datasets_data]
     colors = [PALETTE.get(d[1], PALETTE["Default"]) for d in datasets_data]
     avg_times = [d[2]["avg_time"] for d in datasets_data]
+    counts = [(d[2]["eval_count"], d[2]["total_tasks"]) for d in datasets_data]
 
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, ax = plt.subplots(figsize=(10, 6.5), dpi=300)
@@ -366,30 +391,33 @@ def plot_time_chart(
 
     bars = ax.bar(x, avg_times, width=width, color=colors, edgecolor="#1E293B", linewidth=1.2, zorder=3)
 
-    for bar, tim in zip(bars, avg_times):
+    for bar, tim, (ev_c, tot_c) in zip(bars, avg_times, counts):
         y_val = bar.get_height()
+        sub_txt = f"({ev_c} corretas)" if only_correct else f"({tot_c} tasks)"
         ax.text(
             bar.get_x() + bar.get_width() / 2.0,
             y_val + max(avg_times) * 0.03,
-            f"{tim:.2f}s",
+            f"{tim:.2f}s\n{sub_txt}",
             ha="center",
             va="bottom",
-            fontsize=11,
+            fontsize=10,
             fontweight="bold",
             color="#0F172A",
             bbox=dict(boxstyle="round,pad=0.25", facecolor="#FFFFFF", alpha=0.9, edgecolor="#E2E8F0", linewidth=0.8),
             zorder=4
         )
 
-    ax.set_title(f"Tempo Médio de Execução por Task - Modelo: {model_name}", fontsize=15, fontweight="bold", pad=20)
+    title_suffix = "(Apenas Tasks Corretas)" if only_correct else "(Todas as Tasks)"
+    ax.set_title(f"Tempo Médio de Execução por Task {title_suffix} - Modelo: {model_name}", fontsize=14, fontweight="bold", pad=20)
     ax.set_ylabel("Tempo Médio (segundos)", fontsize=12, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
-    ax.set_ylim(0, max(avg_times) * 1.30 if avg_times else 10)
+    ax.set_ylim(0, max(avg_times) * 1.35 if avg_times else 10)
     ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
 
     mean_tim = np.mean(avg_times) if avg_times else 0
-    ax.axhline(mean_tim, color="#64748B", linestyle=":", linewidth=1.5, label=f"Média Geral: {mean_tim:.2f}s", zorder=2)
+    legend_label = f"Média Geral (Corretas): {mean_tim:.2f}s" if only_correct else f"Média Geral: {mean_tim:.2f}s"
+    ax.axhline(mean_tim, color="#64748B", linestyle=":", linewidth=1.5, label=legend_label, zorder=2)
     ax.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.9)
 
     plt.tight_layout()
@@ -400,7 +428,8 @@ def plot_time_chart(
 def plot_dashboard_all(
     model_name: str,
     datasets_data: List[Tuple[str, str, Dict[str, Any]]],
-    output_path: str
+    output_path: str,
+    only_correct: bool = False
 ):
     """
     Gera o Dashboard mestre 3-em-1 combinando Acurácia, Tokens e Tempo,
@@ -457,7 +486,8 @@ def plot_dashboard_all(
             fontsize=9.5,
             fontweight="bold"
         )
-    ax_tok.set_title("Média de Tokens / Task", fontsize=13, fontweight="bold", pad=12)
+    tok_title = "Média Tokens / Task (Corretas)" if only_correct else "Média Tokens / Task"
+    ax_tok.set_title(tok_title, fontsize=13, fontweight="bold", pad=12)
     ax_tok.set_ylabel("Tokens", fontsize=11, fontweight="semibold")
     ax_tok.set_xticks(x)
     ax_tok.set_xticklabels(labels, fontsize=10, fontweight="semibold", rotation=15)
@@ -476,7 +506,8 @@ def plot_dashboard_all(
             fontsize=9.5,
             fontweight="bold"
         )
-    ax_tim.set_title("Tempo Médio / Task (s)", fontsize=13, fontweight="bold", pad=12)
+    tim_title = "Tempo Médio / Task (s) (Corretas)" if only_correct else "Tempo Médio / Task (s)"
+    ax_tim.set_title(tim_title, fontsize=13, fontweight="bold", pad=12)
     ax_tim.set_ylabel("Segundos", fontsize=11, fontweight="semibold")
     ax_tim.set_xticks(x)
     ax_tim.set_xticklabels(labels, fontsize=10, fontweight="semibold", rotation=15)
@@ -538,8 +569,9 @@ def plot_dashboard_all(
             cell.set_text_props(color="#0F172A")
             cell.set_height(0.18)
 
+    filter_desc = "[Filtro: Apenas Tasks Corretas]" if only_correct else "[Filtro: Todas as Tasks]"
     fig.suptitle(
-        f"ARC-AGI Benchmark Comparativo de Transformações - Modelo: {model_name}",
+        f"ARC-AGI Benchmark Comparativo de Transformações - Modelo: {model_name} {filter_desc}",
         fontsize=17,
         fontweight="bold",
         y=0.98,
@@ -554,11 +586,15 @@ def main():
     parser = argparse.ArgumentParser(description="Plotador de Benchmarks ARC-AGI (Acurácia, Tokens e Tempo)")
     parser.add_argument(
         "--model", "-m", default="Gemma",
-        help="Nome do modelo ou subpasta em Results/ (ex: 'Gemma', 'Results/Gemma')"
+        help="Nome do modelo ou subpasta em Results/ (ex: 'Gemma', 'Gemini_3.5_Flash_Lite', 'Results/Gemma')"
     )
     parser.add_argument(
         "--metric", choices=["accuracy", "acerto", "tokens", "time", "tempo", "all"], default="all",
         help="Métrica para plotar: 'accuracy' (acertos), 'tokens', 'time' (tempo) ou 'all' (todos)"
+    )
+    parser.add_argument(
+        "--only-correct", "--correct-only", "-c", action="store_true", default=False,
+        help="Calcula médias e totais de tokens e tempo considerando SOMENTE as tasks com status CORRECT (padrão: False / todas as tasks)"
     )
     parser.add_argument(
         "--output-dir", default=None,
@@ -585,6 +621,9 @@ def main():
 
     print(f"[+] Carregando mapeamento de tasks originais...")
     meta_map = load_metadata_mapping("New Tasks/transformed_tasks.csv")
+    # Também tenta carregar mapeamento específico se houver em subpasta
+    if os.path.exists(os.path.join("New Tasks", model_name, "transformed_tasks.csv")):
+        meta_map.update(load_metadata_mapping(os.path.join("New Tasks", model_name, "transformed_tasks.csv")))
 
     print(f"[+] Descobrindo datasets em '{model_dir}'...")
     dataset_dirs = discover_model_datasets(model_dir)
@@ -593,10 +632,11 @@ def main():
         print(f"[!] Nenhum dataset com planilhas de resultados encontrado em '{model_dir}'.")
         return
 
-    print(f"[+] Extraindo métricas de {len(dataset_dirs)} pastas de datasets...")
+    filter_info = "SOMENTE tasks CORRECT" if args.only_correct else "TODAS as tasks"
+    print(f"[+] Extraindo métricas de {len(dataset_dirs)} pastas de datasets (Base Tokens/Tempo: {filter_info})...")
     datasets_data = []
     for fpath, label, color_key in dataset_dirs:
-        m = extract_dataset_metrics(fpath, meta_map)
+        m = extract_dataset_metrics(fpath, meta_map, only_correct=args.only_correct)
         if m:
             datasets_data.append((label, color_key, m))
 
@@ -605,24 +645,25 @@ def main():
         return
 
     # Exibe resumo no terminal
-    print_summary_table(model_name, datasets_data)
+    print_summary_table(model_name, datasets_data, only_correct=args.only_correct)
 
     metric = args.metric.lower()
     clean_model_name = model_name.lower().replace(" ", "_")
+    suffix = "_correct_only" if args.only_correct else ""
 
     # Geração dos gráficos solicitados
     if metric in ["accuracy", "acerto"]:
-        plot_accuracy_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_accuracy.png"))
+        plot_accuracy_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_accuracy{suffix}.png"))
     elif metric in ["tokens"]:
-        plot_tokens_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_tokens.png"))
+        plot_tokens_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_tokens{suffix}.png"), only_correct=args.only_correct)
     elif metric in ["time", "tempo"]:
-        plot_time_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_times.png"))
+        plot_time_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_times{suffix}.png"), only_correct=args.only_correct)
     elif metric == "all":
-        dash_path = os.path.join(out_dir, f"benchmark_{clean_model_name}_dashboard.png")
-        plot_dashboard_all(model_name, datasets_data, dash_path)
-        plot_accuracy_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_accuracy.png"))
-        plot_tokens_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_tokens.png"))
-        plot_time_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_times.png"))
+        dash_path = os.path.join(out_dir, f"benchmark_{clean_model_name}_dashboard{suffix}.png")
+        plot_dashboard_all(model_name, datasets_data, dash_path, only_correct=args.only_correct)
+        plot_accuracy_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_accuracy{suffix}.png"))
+        plot_tokens_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_tokens{suffix}.png"), only_correct=args.only_correct)
+        plot_time_chart(model_name, datasets_data, os.path.join(out_dir, f"benchmark_{clean_model_name}_times{suffix}.png"), only_correct=args.only_correct)
 
     print("\n[+] Processamento concluído com sucesso!")
 
