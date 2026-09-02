@@ -72,10 +72,10 @@ COLORATION_TRANSFORMS = [
 
 IDENTITY_TRANSFORM = ("identity", "Identity", identity)
 
-def generate_color_mapping(task_data: dict) -> Dict[int, int]:
+def generate_color_mapping(task_data: dict, include_zero: bool = True) -> Dict[int, int]:
     """
     Gera um mapeamento de permutação aleatório e não-trivial para as cores presentes na task.
-    Mantém o 0 (geralmente background) ou permuta as cores 1-9 de forma consistente.
+    Se include_zero for True, a cor 0 (background) também pode ser permutada juntamente com as cores 1-9.
     """
     colors_present = set()
     for split in ["train", "test"]:
@@ -84,23 +84,23 @@ def generate_color_mapping(task_data: dict) -> Dict[int, int]:
                 grid = pair.get(grid_key, [])
                 for row in grid:
                     for val in row:
-                        if isinstance(val, int) and val > 0:
+                        if isinstance(val, int) and (val >= 0 if include_zero else val > 0):
                             colors_present.add(val)
                             
     active_colors = sorted(list(colors_present))
     if not active_colors:
         return {}
         
-    # Se há apenas 1 cor, escolhe outra cor aleatória de 1 a 9 diferente dela
+    # Se há apenas 1 cor, escolhe outra cor aleatória de 0 a 9 diferente dela
     if len(active_colors) == 1:
         c = active_colors[0]
-        possible = [x for x in range(1, 10) if x != c]
+        possible = [x for x in range(0 if include_zero else 1, 10) if x != c]
         new_c = random.choice(possible)
         return {c: new_c}
         
-    # Se há 2 ou mais cores, faz um desarranjo/permutação para que ao menos uma mude
+    # Se há 2 ou mais cores, faz um desarranjo/permutação para que as cores mudem
     shuffled = active_colors[:]
-    for _ in range(20):
+    for _ in range(50):
         random.shuffle(shuffled)
         if any(a != b for a, b in zip(active_colors, shuffled)):
             break

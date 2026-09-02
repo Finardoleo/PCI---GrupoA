@@ -252,7 +252,10 @@ def collect_all_tasks(data_dir: str = "data", split: str = "all") -> list:
     for pattern in search_patterns:
         matched = glob.glob(pattern, recursive=True)
         for p in matched:
-            tasks.append(p.replace("\\", "/"))
+            norm_p = p.replace("\\", "/")
+            if "different input-output" in norm_p.lower() or "/different" in norm_p.lower():
+                continue
+            tasks.append(norm_p)
             
     unique_tasks = sorted(list(dict.fromkeys(tasks)))
     return unique_tasks

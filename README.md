@@ -128,19 +128,22 @@ Tasks are automatically saved in categorized folders:
 All transformations are tracked and deduplicated in `New Tasks/transformed_tasks.csv`.
 
 ### plot_results.py (ARC-AGI Benchmark Plotter & Analytics)
-Generates high-resolution comparative bar charts and executive summary tables comparing datasets (`Training`, `Rotated`, `Reflected`, `Merged`) for any model subfolder in `Results/`:
+Generates high-resolution comparative bar charts and executive summary tables comparing datasets (`Training`, `Rotated`, `Reflected`, `Coloration`, `Merged`) for any model subfolder in `Results/`:
 ```bash
 # Generate complete 3-in-1 dashboard and all individual charts for Gemma
 python plot_results.py --model Gemma --metric all
 
+# Generate metrics considering ONLY tasks answered correctly (CORRECT)
+python plot_results.py --model Gemini_3.5_Flash_Lite --only-correct
+
 # Plot only accuracy comparison
-python plot_results.py --model Gemma --metric accuracy
+python plot_results.py --model Gemini_3.5_Flash_Lite --metric accuracy
 
-# Plot only tokens comparison with Min/Max breakdowns
-python plot_results.py --model Gemma --metric tokens
+# Plot tokens comparison for correct tasks only
+python plot_results.py --model Gemini_3.5_Flash_Lite --metric tokens --only-correct
 
-# Plot only execution time comparison
-python plot_results.py --model Gemma --metric time
+# Plot execution time comparison for all tasks
+python plot_results.py --model Gemini_3.5_Flash_Lite --metric time
 ```
 All figures (`.png`) are saved directly inside `Results/<model>/` with detailed Min/Max tracking for `CORRECT` and `INCORRECT` tasks linked back to their original tasks.
 

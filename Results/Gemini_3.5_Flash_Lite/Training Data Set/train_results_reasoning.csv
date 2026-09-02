@@ -1,0 +1,401 @@
+Task,gemini-3.5-flash-lite
+007bbfb7.json,"The 3x3 input expands to a 9x9 output grid consisting of a 3x3 arrangement of 3x3 blocks. If an input cell is non-zero, the corresponding block is a full copy of the input grid; if zero, the block is filled with zeros."
+025d127b.json,"Applied a row-specific horizontal shear transformation to the 5-row hollow parallelogram shape, shifting boundaries and redrawing top/bottom rows as solid bars."
+017c7c7b.json,"Convert all pixels with value 1 to 2, split the input into two 3x3 vertical blocks A and B, and construct a 9x9 (or 9x3) output by repeating the blocks vertically (A, B, A if A equals B)."
+00d62c1b.json,"Identify closed loops or enclosed cavities of background pixels (0) completely trapped inside boundaries formed by color (3) pixels, and fill those enclosed interior regions with yellow (4)."
+0520fde7.json,"Perform an element-wise logical AND between the left and right 3x3 subgrids, and replace any resulting 1s with 2s in the output grid."
+045e512c.json,"The input grid contains a template shape (color 8) that remains fixed, and various colored target lines. Vertical lines produce horizontal copies of the template in the target color, while horizontal lines produce vertical copies, with lengths corresponding to the line sizes."
+05269061.json,"Fill the 7x7 output grid with a repeating 3-element sequence [2, 4, 1] based on the (r + c) mod 3 residue pattern derived from the input grid."
+05f2a901.json,The red object moves along the alignment axis directly toward the teal anchor object until it touches it.
+06df4c85.json,"Connect points of the same non-zero color using vertical and horizontal line segments (Manhattan paths) on the cell grid, delineated by the background grid lines."
+08ed6ac7.json,"Identify vertical bars of grey pixels, rank them by height from tallest to shortest, and replace them with specific colors corresponding to their rank (1 for tallest, 2 for second, etc.)."
+0962bcdd.json,"Replace each cross-shaped pattern (center color C, arm color A) with a 5x5 symmetrical pattern where C forms a diagonal cross (X shape) and A forms an orthogonal cross (+ shape) of radius 2."
+09629e4f.json,"The 11x11 grid consists of a 3x3 layout of 3x3 sub-grids separated by rows and columns of 5s. Based on the input, four specific sub-grids are filled entirely with the digits 2, 3, 4, and 6, while the remaining sub-grids are set to 0."
+0b148d64.json,"Identify the single quadrant with the unique color out of the four quadrants separated by lines of zeros, and output that quadrant."
+0ca9ddb6.json,"Red pixels (2) generate yellow (4) pixels in an X shape (diagonals), and blue pixels (1) generate orange (7) pixels in a plus shape (orthogonals). Other colored pixels remain unchanged."
+0a938d79.json,"Based on the positions and colors of two seed points, the grid is filled with repeating vertical stripes where the column period is defined by the row difference ($\Delta r$) and the stripe offset by the column difference ($\Delta c$)."
+0d3d703e.json,"Applied a consistent color-substitution (digit-mapping) rule uniformly across the grid, where each digit is replaced by its corresponding mapped value."
+0dfd9992.json,"Reconstructed the grid by repeating the underlying periodic background tile pattern across the entire grid, filling in corrupted or missing black pixels based on modulo coordinates."
+11852cab.json,Enforce full two-fold symmetry: make the grid both horizontally symmetrical (mirroring left and right across the central column) and vertically symmetrical (mirroring rows above and below the central row).
+10fcaaa3.json,"Transforms the input into a 2x2 tiled output where even rows become alternating 8 and 0, odd rows are duplicated horizontally, and the resulting block is duplicated vertically."
+0e206a2e.json,The puzzle involves template matching where objects (Group 1 and Group 2) interact with predefined templates containing structural arms (5s) to complete the final grid configuration based on spatial positioning and component merging rules.
+1190e5a7.json,"Count the number of horizontal and vertical dividing lines to determine the output dimensions (lines + 1), and fill the resulting grid entirely with the background color."
+137eaa0f.json,"Extracted the local 3x3 neighborhoods around each '5' anchor in the input grid and combined them into a single composite 3x3 output grid centered at (1, 1)."
+150deff5.json,"Transform gray shapes by coloring segments of length 3 aligned with rows/columns that are multiples of 3 in red, and fill the remaining parts with cyan."
+178fcbfb.json,"Markers of colors 1 and 3 draw horizontal lines across their respective rows, while color 2 draws vertical lines down its column. Horizontal lines take precedence over vertical lines at intersections."
+1b2d62fb.json,"For each row, find the union of column indices containing 9 in the left and right 3-column blocks, and place an 8 in the output row's complement positions (where 9 does not appear in either block), with 0 elsewhere."
+1a07d186.json,"Stray pixels are filtered to retain only those matching the color of a full line, and are then repositioned directly adjacent to that line (above/below for horizontal lines, or left/right for vertical lines), preserving their perpendicular coordinate."
+1b60fb0c.json,"Reflect blue pixels (1) from the right side across the central axis (column 5), and fill the corresponding empty spaces on the left side with red pixels (2)."
+1bfc4729.json,"The grid is split into top and bottom halves (rows 0-4 and 5-9). The top color from the input defines the top half pattern where rows 0 and 2 are fully filled and rows 1, 3, 4 are hollowed. The bottom color defines the bottom half pattern where rows 7 and 9 are fully filled and rows 5, 6, 8 are hollowed."
+1e0a9b12.json,"Apply gravity to each column, causing all non-zero blocks to fall to the bottom while maintaining their relative vertical order."
+1caeab9d.json,"Shift all colored objects vertically so that their top-to-bottom row spans match the vertical span of the reference blue object, while preserving their horizontal shapes and positions."
+1c786137.json,Extract the interior subgrid strictly enclosed within the outer rectangular border of the input grid.
+1cf80156.json,Extracted the subgrid defined by the bounding box of the non-zero pixels.
+1f642eb9.json,Outside colored pixels project orthogonally onto the nearest edge of the central teal (8) block while maintaining their original positions.
+1f85a75f.json,Extract the bounding box of the unique colored target object from the input grid.
+1e32b0e9.json,Place a C-shape at the right neighbor of each input object (or at the object itself if no right neighbor or based on specific grid coordinates).
+1f0c79e5.json,Fill cells where the column index matches the anti-diagonal and main diagonal bounds for each row with color 8.
+2013d3e2.json,Find the bounding box of non-zero pixels and extract the 3x3 subgrid starting from its top-left corner.
+2204b7a8.json,Green pixels are transformed to the color of the closest uniform boundary line (left or right column).
+1f876c06.json,Connect pairs of identical numbers in the input grid with straight diagonal lines of the same value.
+1fad071e.json,"Count the number of 2x2 blue blocks in the input grid and generate a 1x5 output grid with that number of 1s, followed by 0s."
+22168020.json,"For each row independently, if there are two or more pixels of the same color, fill all the cells horizontally between the leftmost and rightmost pixels of that color."
+2281f1f4.json,"Project the gray pixel pattern from Row 0 onto every row that has a gray marker at Column 9, changing the projected pixels' color to red (2), while the marker at column 9 remains gray (5). All other rows remain zero."
+228f6490.json,"Floating shapes outside the gray containers are moved inside the matching internal holes of the gray container regions, leaving their original locations blank."
+22233c11.json,The output grid is filled with 8s and 3s based on non-overlapping rectangular blocks placed at specific coordinates as identified in the reasoning.
+22eb0ac0.json,"Check the first and last column of each row. If they are equal, fill the entire row with that number; otherwise, leave the row unchanged."
+23581191.json,"Draw horizontal and vertical lines from the teal (8) and orange (7) pixels. Where the horizontal line of one color intersects the vertical line of the other color, mark the intersection with red (2). All other cells in those rows and columns take the respective color, and remaining cells are 0."
+234bbc79.json,Remove the four gray anchor pixels (5) and superimpose the overlapping colored shapes relative to their positions to form a single compact output grid.
+23b5c85d.json,Extract the smallest object by area from the input grid and output it as a cropped grid.
+239be575.json,Determined whether a continuous orthogonal path of the color 8 connects the two 2x2 blocks of the color 2.
+253bf280.json,"Connect pairs of teal pixels (8) on the same row or column with a line of green pixels (3), leaving isolated teal pixels unchanged."
+25d8a9c8.json,"For each row, if all three numbers are identical, the row is replaced with 5 5 5; otherwise, it is replaced with 0 0 0."
+25ff71a9.json,Shift all non-zero elements down by one row.
+25d487eb.json,"An anomalous pixel at the base of a triangular shape projects a vertical line of its own color towards the tip and all the way to the edge of the grid, filling empty cells in its path without overwriting existing shape pixels."
+272f95fa.json,"The grid is partitioned into a 3x3 sub-region layout by teal (8) intersecting lines, and specific regions are filled with fixed colors (red, yellow, magenta, green, blue) while corners remain black (0)."
+27a28665.json,"The output value is determined by the spatial configuration (shape) of the non-zero cells in the input grid, mapping specific geometric patterns to scalar values."
+28bf18c6.json,Extract the bounding box of the non-zero colored object and duplicate the resulting subgrid horizontally side-by-side to form the output grid.
+264363fd.json,Remove the template pattern from its original location outside the rectangles and stamp a copy of it centered at every marker location inside the rectangles.
+29c11459.json,"For rows with non-zero endpoints at column 0 and 10, fill columns 0-4 with the left endpoint's color, place a grey (5) in column 5, and fill columns 6-10 with the right endpoint's color. Other rows remain zeros."
+29623171.json,"Count the number of non-zero pixels in each 3x3 subgrid, find the maximum count, and fill only the subgrids that achieve this maximum count with their object color, clearing all other subgrids to 0 while keeping the separator lines (5) intact."
+28e73c20.json,Generate a square spiral pattern of green cells (3) winding inward on a grid of zeros.
+29ec7d0e.json,"Reconstruct the missing values of an $N \times N$ fundamental tile (where $N=9$) using periodic information from the tiled input grid, and then tile this complete base block to fill the entire output area."
+2bee17df.json,Extract the coordinate ranges and patterns from the reasoning to determine the full-width and vertical span features of the grid.
+2bcee788.json,Reflect the upper pattern vertically across a horizontal axis located just above the row containing the color 2 marker.
+2c608aff.json,"Isolated marker pixels that align horizontally or vertically with the central block project towards the nearest edge of the block, filling the intervening background space with their color, while misaligned marker pixels remain unchanged."
+2dc579da.json,"Extract the 6x6 quadrant of the grid that contains the single unique anomalous pixel, delineated by the intersecting background-colored cross lines."
+2dee498d.json,Extracted the base grid by taking the first one-third of the columns from the horizontally repeated input grid.
+31aa019c.json,"Find the unique color in the input grid, locate its coordinates, and create a 3x3 square at those coordinates in the output grid (filled with zeros elsewhere) where the center has the unique color and the surrounding 8 pixels are filled with the color 2."
+2dd70a9a.json,"Draw an orthogonal path of color 3 connecting the green/teal marker (3) to the red destination marker (2), routing around obstacles of color 8."
+321b1fc6.json,"Locate the non-teal template shape, remove it from its original position, and stamp/copy it onto every location where a teal (8) shape was present in the input grid."
+32597951.json,"Within the bounding box defined by the teal (8) pixels, change all blue (1) pixels to green (3), while leaving all other pixels unchanged."
+3428a4f5.json,"Combine the top and bottom 6x5 blocks of the input grid using a conditional overlay rule: matching 2s become 0, matching 0s become 0, and a mix of 0 and 2 becomes 3."
+3618c87e.json,"The blue pixels in row 2 move down to replace the gray pixels at the same column positions in the bottom row, while row 3 remains unchanged."
+3345333e.json,"Clear the block of 8s, and shift the 5s to the left by 4 columns (subtract 4 from their indices), preserving existing values where they overlap."
+363442ee.json,"For every marker '1' at (r, c) in the right section, stamp a copy of the 3x3 pattern from the left section with its top-left corner at (r - 1, c - 1)."
+3631a71a.json,Extracted specific sub-grids from the input and rearranged them by reversing the row order.
+36d67576.json,Complete the incomplete yellow shapes by applying the relative marker patterns (green and blue pixels) from the complete reference shape based on the red anchor position and orientation.
+36fdfd69.json,Color 4 fills background pixels (value 1) that are sandwiched between two pixels of color 2 (horizontally or vertically) within a short distance.
+39a8645d.json,Extract the 3x3 shape corresponding to the color with the highest numerical value in the input grid.
+3906de3d.json,Red pixels move upwards column-by-column into available empty spaces until blocked by blue pixels or the top edge of the grid.
+39e1d7f9.json,Extracted cell values from grid coordinates where block indices determine scalar grid values.
+3aa6fb7a.json,Locate all 3-cell L-shaped components of color 8 (teal) and fill in the missing 4th cell to complete a 2x2 square with color 1 (blue).
+3ac3eb23.json,"Even rows copy the original row 0, while odd rows split each non-zero element from row 0 into its left and right adjacent columns."
+3af2c5a8.json,"Mirrors the input grid horizontally to double its width, and then mirrors the resulting grid vertically to double its height, creating a 2x2 reflection-symmetric output."
+3bd67248.json,"The first column retains its original color, a diagonal line of red (2) is drawn from top-right to bottom-left for all rows except the last, and the final row is filled with yellow (4) after the first column."
+3c9b0459.json,Rotate the input grid by 180 degrees (reverse row order and reverse elements within each row).
+3bdb4ada.json,"For each 3-row-high solid rectangular block, the top and bottom rows remain unchanged, while the middle row alternates between the block's color and 0 starting with the block's color at the leftmost column."
+3befdf3e.json,"Objects with outer borders and inner cores expand based on their size (3x3 to 5x5, 4x4 to 8x8) with specific internal color transformations and positioning shifts."
+3de23699.json,Replace all green (3) pixels with red (2) pixels in the specified positions.
+3eda0437.json,"The task involves identifying patterns, coordinates, and contiguous blocks of zeros or specific sequences within the grid rows."
+3e980e27.json,"Source shapes attached to specific anchor colors (2 and 3) are copied to all other occurrences of those anchor colors in the grid. Shapes copied for anchor 2 are horizontally reflected, while shapes copied for anchor 3 remain unchanged."
+40853293.json,"Connect pairs of pixels of the same color with straight horizontal or vertical lines. When lines intersect, vertical lines take precedence and overwrite horizontal lines."
+3f7978a0.json,"Extract the rectangular subgrid bounded by a teal (8) frame that encloses the vertical gray (5) bars, including the frame itself."
+4093f84a.json,"Non-zero pixels are pulled horizontally or vertically toward a continuous gray obstacle (wall), packing densely against its edges."
+41e4d17e.json,"Find the center of each 5x5 hollow square of color 1 and draw intersecting horizontal and vertical lines of color 6 through the center, while preserving the original color 1 borders."
+4258a5f9.json,"For each gray (5) pixel in the input, replace its 3x3 neighborhood with blue (1) pixels while keeping the central pixel as gray (5). All other cells remain black (0)."
+42a50994.json,"Remove any foreground pixel (value 3) that has no 8-connected neighbors (isolated single pixels), keeping only pixels that belong to a connected component of size 2 or greater."
+4290ef0e.json,"Construct concentric hollow square frames of decreasing sizes centered in the grid, each with a unique color based on the input pattern."
+4347f46a.json,"Identify all solid rectangular colored regions in the input grid and transform them into hollow rectangles by replacing internal pixels with the background color (0), leaving only the outer perimeter intact."
+445eab21.json,"Compare two hollow rectangular frames by size (pixel count, then bounding box area) and output a 2x2 grid filled with the color of the larger frame."
+447fd412.json,"The top object's rows are vertically scaled by a factor matching the bottom block's height (2 rows per original row), and horizontally scaled similarly (multiplied by 2) to generate the output shape."
+444801d8.json,"Encloses shapes made of blue pixels by adding a top overflow row of the internal seed color, filling the top row of the shape's interior at the center, filling subsequent interior rows with a 3-column width of the seed color, and leaving the bottom row as blue."
+44d8ac46.json,Enclosed background holes (zeros) surrounded by grey shapes (fives) are filled with red (twos) if and only if the hole is a square (width equals height); non-square holes remain unchanged.
+44f52bb0.json,"Output 7 if the maximum connected component size of the digit 2 is 2; otherwise, output 1."
+4522001f.json,"Find the minimum row and column indices of color 3 in the input, then construct a 9x9 grid with two 4x4 blocks of color 3 placed at (min_r, min_c) and (min_r + 4, min_c + 4)."
+4612dd53.json,Fill the spaces between horizontally and vertically adjacent 1s with 2s.
+46f33fce.json,"The grid expands from 10x10 to 20x20. Each non-zero input pixel at (r, c) expands into a 4x4 block of the same color in the output grid, with the top-left corner determined by calculated row and column formulas."
+469497ad.json,"The input grid is scaled up based on the number of distinct non-zero colors in its border. Specifically, the scale factor is the number of distinct border colors plus one. The inner blocks and border features are scaled up by this factor, and special diagonal rays of color 2 are generated from the corners of the scaled inner object."
+47c1f68c.json,"The top-left quadrant's shape is replicated across all four quadrants of the output grid with symmetrical reflections (TL is normal, TR is horizontally flipped, BL is vertically flipped, and BR is rotated 180 degrees) using the divider color."
+46442a0e.json,"The input grid is expanded into four quadrants representing the original grid rotated by 0 degrees (top-left), 90 degrees clockwise (top-right), 90 degrees counter-clockwise (bottom-left), and 180 degrees (bottom-right)."
+48d8fb45.json,Locate the gray marker (5) and extract the 3x3 subgrid immediately below it.
+496994bd.json,"Extract the contiguous block of non-zero rows from the top of the input grid, vertically reflect it, and place it at the bottom of the output grid while filling the intermediate rows with zeros."
+4938f0c2.json,Mirror the red (2) pattern in one quadrant across both the horizontal and vertical center axes defined by the green (3) anchor to form four-way radial symmetry.
+49d1d64f.json,Expand the grid by adding a border. The top and bottom rows start and end with '0' enclosing the input's first and last rows respectively. The intermediate rows have their first and last elements duplicated.
+4be741c5.json,Extracts the sequence of colors from vertical or horizontal stripes and formats them into a row vector (for vertical stripes) or column vector (for horizontal stripes).
+484b58aa.json,Fill in the zero values of each row by copying the corresponding non-zero values from the pristine (zero-free) row that belongs to the same congruence class modulo 9.
+50846271.json,Gray pixels (color 5) that are sandwiched horizontally or vertically between two red pixels (color 2) are transformed into teal (color 8).
+4c5c2cf0.json,"Reflected shapes horizontally across the central vertical axis, and for shapes in the lower half, also reflected them vertically across the central horizontal axis."
+4c4377d9.json,"Vertically flipped the input grid and concatenated it directly on top of the original input grid, doubling the height while keeping the width the same."
+508bd3b6.json,"A teal ray originates from a diagonal segment and travels at a 45-degree angle. Upon colliding with a red obstacle, it reflects at standard angles, drawing a green path until it hits the outer boundary wall."
+50cb2852.json,"Hollow out the interior of each solid colored rectangle, replacing the inside pixels with teal (8) while keeping the original 1-pixel border intact."
+5168d44c.json,"A 3x3 block containing '2's and a central '3' moves 2 units in the positive direction along a background line of alternating '3's and '0's, while restoring the background pattern in its vacated area."
+5117e062.json,Extract the 3x3 object that contains the teal pixel ('8') and replace the teal pixel with the object's surrounding color.
+53b68214.json,Identify the vertical repeating pattern (motif) in the input and tile it vertically until the output grid reaches a height of 10 rows.
+539a4f51.json,"Expand the 5x5 input grid into a 10x10 output grid where the top-left quadrant is the original input, the top-right and bottom-left quadrants mirror the top and left edges respectively, and the bottom-right quadrant expands based on the diagonal elements."
+54d82841.json,Place a yellow pixel (4) on the bottom row directly beneath the center column of each 3-wide hollow shape found in the grid.
+543a7ed5.json,"Encircle each magenta shape with a 1-pixel wide green border, and convert any gray pixels strictly enclosed within the magenta shapes into yellow."
+54d9e175.json,The grid is divided into 3x3 regions separated by '5's. Each region is filled uniformly with a value equal to its center digit plus 5.
+5582e5ca.json,Replace the entire grid with a uniform 3x3 grid consisting only of the most frequent number found in the input grid.
+5521c0d9.json,Each distinct colored object is shifted vertically UP by a number of rows equal to its height.
+5614dbcf.json,"Partition the 9x9 input grid into a 3x3 arrangement of 3x3 subgrids and extract the dominant non-zero color from each subgrid, ignoring the grey (5) markers."
+56ff96f3.json,"For each unique non-zero color, find its minimum and maximum row and column extents, and fill the resulting rectangular bounding box with that color."
+56dc2b01.json,"The green shape moves towards the red barrier until adjacent to it, and a line of cyan cells ('8') is left behind on the opposite side of the shape."
+5bd6f4ac.json,"Extracts the top-right 3x3 subgrid (rows 0 to 2, columns 6 to 8) from the 9x9 input grid."
+5c0a986e.json,"Extend a diagonal line up-left from the top-left corner of the blue 2x2 square, and extend a diagonal line down-right from the bottom-right corner of the red 2x2 square to the grid edges."
+5c2c9af4.json,"Draw concentric, hollow square frames centered at the middle point of the input diagonal, with radii expanding by the step size and clipped to the grid boundaries."
+57aa92db.json,"The color with the higher numerical value acts as a wrapper, forming a C-shaped frame around the adjacent object with the lower numerical value based on their relative positions."
+5daaa586.json,"Extract the section of the grid between the two horizontal solid boundary rows and the two vertical marker columns, combining the interior rows into the output while retaining the boundary markers."
+60b61512.json,Find the bounding box of each connected component of yellow (4) pixels and fill all background (0) pixels inside that bounding box with orange (7) pixels.
+6150a2bd.json,Rotated the grid 180 degrees by reversing the row order and reversing the elements within each row.
+5ad4f10b.json,"The input grid is divided into a 3x3 region, and each output cell evaluates to the secondary scattered color if those regions contain scattered pixels interacting with the large primary-color blocks, resulting in a 3x3 summary grid."
+62c24649.json,"Double the width of each row by mirroring it horizontally, then double the height of the grid by mirroring the rows vertically."
+6430c8c4.json,"Create a 4x4 output grid containing green pixels (3) at positions where both the top subgrid (orange/black) and bottom subgrid (red/black) have a black pixel (0), and black pixels (0) everywhere else."
+623ea044.json,The grid forms a diamond outline (Manhattan distance from the center equals the radius).
+6455b5f5.json,"Regions partitioned by red (2) lines are filled based on their size: the smallest regions are filled with teal (8), the largest region is filled with blue (1), and intermediate regions remain unchanged."
+63613498.json,"Locate a pair of congruent shapes in the grid. The one adjacent to the central gray L-shape anchor remains unchanged, while the other congruent shape located further away is entirely replaced by gray (color 5)."
+662c240a.json,Extracted the third 3x3 block from the input grid based on the matching block count profile pattern from the examples.
+67385a82.json,"Connected components of green pixels (value 3) of size 1 remain 3, while components of size 2 or greater change to teal (value 8). Background pixels (0) remain unchanged."
+67a3c6ac.json,Each row of the input grid is horizontally reflected (reversed from left to right).
+673ef223.json,"Isolated 8s in the upper section expand horizontally toward the upper wall of '2's, leaving a '4' at their original position. Corresponding relative offsets in the lower section generate full horizontal rows of 8s extending to the lower wall."
+67e8384a.json,"The 3x3 input grid is expanded into a 6x6 output grid through 4-way mirroring: the top-left is the original, top-right is horizontally flipped, bottom-left is vertically flipped, and bottom-right is both horizontally and vertically flipped."
+67a423a3.json,"At the intersection of a horizontal and vertical line, a 3x3 region is created where the 8 surrounding cells are changed to color 4, while the center cell retains its original value."
+681b3aeb.json,"Combine the larger base object and the smaller foreground object by placing the smaller object onto the bottom-left of the larger object, with the smaller object's color taking precedence where they overlap."
+6855a6e4.json,Gray objects slide along their axis into the interior of the red enclosure until they hit the inner walls.
+68b16354.json,Vertical reflection (flipping the grid upside down by reversing the order of the rows).
+694f12f3.json,"Fill the interior of yellow rectangles with blue (1) if their width is even, or red (2) if their width is odd, while keeping the outer border yellow (4)."
+6773b310.json,"Partition the input grid into a 3x3 arrangement of 3x3 sub-grids. Count the magenta (6) pixels in each sub-grid. If the count is 2 or more, output 1; otherwise, output 0."
+6b9890af.json,The output grid matches the outer dimensions of the input frame (with a 1-pixel border of the frame color). Each pixel of the 3x3 input shape is expanded into a scaled block inside the frame interior according to the ratio of the inner frame dimensions to the shape dimensions.
+6aa20dc0.json,"Connect two specified solid 3x3 squares of different colors using a structural frame of a third color defined by a template, omitting extra templates if no seed markers are present."
+6a1e5592.json,"Extract the shape dimensions and characteristics from the bottom region (width 2-3, height 4) and project them onto the top region based on the corresponding top holes/shapes."
+6c434453.json,Transform 3x3 hollow rings of blue pixels (1) into 3x3 red (2) plus signs (crosses) while preserving all other pixels.
+6d0160f0.json,"Locate the subgrid containing the digit 4, find the local coordinates (r, c) of the 4 within that subgrid, and copy the entire source subgrid into the output subgrid at position (r, c) while setting all other output subgrids to 0."
+6cf79266.json,Locate the 3x3 block of zeros hidden in the grid (following a quadrant progression) and replace it with a 3x3 block of blue (1).
+6d0aefbc.json,"For each row, concatenate the original sequence of numbers with its horizontally reversed version to double the grid's width."
+6cdd2623.json,"Rows and columns that have matching non-zero colors at both of their opposite ends are filled entirely with that color, while all other cells are set to zero."
+6d75e8bb.json,Fill the interior background cells (color 0) enclosed within the bounding box of the teal shape (color 8) with red (color 2).
+6d58a25d.json,Only columns within the cavity that already contain the fill color (6) are filled with that color in the output.
+6e02f1e3.json,"Count the number of distinct colors in the input grid and place gray (5) pixels along the anti-diagonal if there are 3 distinct colors (top row for 1, main diagonal for 2)."
+6e19193c.json,Emit diagonal laser rays at a 45-degree angle from the colored objects outward to the grid boundaries.
+6e82a1ae.json,"Isolate grey (5) connected components and recolor them based on their size: size 4 objects become blue (1), size 3 objects become red (2), and size 2 objects become green (3)."
+6f8cd79b.json,"Add a border of color 8 (teal) around the perimeter of the grid, leaving the internal cells as 0."
+6fa7a44f.json,Reflected the 3x3 input grid vertically downwards to create a 6x3 output grid by appending the rows in reverse order.
+72ca375d.json,"Select the object with the median color value among the three distinct colors present in the input grid, extract its bounding box, and place it at the top-left corner of the output grid."
+72322fa7.json,"Extracted the grid rows directly from the reasoning text, reconstructing the 19x19 output grid based on the provided row-by-row coordinates and values."
+6ecd11f4.json,"The output is an N x N matrix formed by applying the macro block-presence mask to the input digit matrix, keeping the digits where the mask has a 1 and replacing them with 0 where the mask has a 0."
+7468f01a.json,Extract the bounding box enclosing all non-zero pixels and horizontally flip the extracted subgrid.
+7447852a.json,"The grid is divided into 4-column motifs which are modified based on their 1-indexed position modulo 3: $k \equiv 1$ gets a bottom-left overlay of 4s, $k \equiv 2$ gets a top-right overlay of 4s, and $k \equiv 0$ remains unmodified."
+73251a56.json,"Fill in the symmetric matrix by ensuring `grid[i][j] = grid[j][i]`, setting missing diagonal elements to `4`, and completing the remaining symmetric blocks based on the non-zero transposed values."
+74dd1130.json,"Formed the output grid by transposing the input grid, swapping its rows and columns."
+746b3537.json,"Perform horizontal compression by removing consecutive duplicate elements in each row, followed by vertical compression by removing consecutive duplicate rows."
+75b8110e.json,The 8x8 input grid is divided into four 4x4 quadrants and superimposed onto a single 4x4 output grid using a strict color priority (z-order) rule where overlapping non-zero values are resolved by quadrant hierarchy.
+776ffc46.json,"Find blue (1) shapes in the grid that match the exact shape and dimensions of the template inside the closed gray (5) frame, and recolor them to match the template's color (red, 2)."
+77fdfe62.json,"Extract the inner grid and replace teal (8) cells with the value of the corresponding corner of the input grid, leaving black (0) cells unchanged."
+760b3cac.json,"The bottom shape remains unchanged, and a horizontally mirrored version of the top shape is placed on the side corresponding to the position of the pixel in row 3 of the bottom shape."
+794b24be.json,"Count the number of blue pixels in the input grid and generate the same number of red pixels, filling the output grid starting from the top-left corner row by row."
+780d0b14.json,"The input grid is segmented into distinct rectangular regions by separating lines of zeros, and the output is a compact 3x3 grid representing the dominant color and spatial arrangement of each region."
+7837ac64.json,"Partition the input grid lines into 3 groups per axis (top/middle/bottom and left/center/right) to downscale the grid to a 3x3 output, mapping the marker colors found at the corresponding intersections."
+7b7f7511.json,Identified the vertically repeating pattern in the grid and extracted the top half as the output.
+7b6016b9.json,"Replace the outer background (0) with 3, keep the structural lines their original color, and flood-fill all fully enclosed regions bounded by the structural lines with 2."
+7c008303.json,"The 6x6 pattern of '3's is filled using a 2x2 source grid located in the opposite quadrant. The top half of the pattern takes its values from the first row of the source, and the bottom half takes its values from the second row."
+7ddcd7ec.json,Identify maximal diagonal segments of length 3 or greater from the input shape and extend them fully across the grid in both directions to the boundaries.
+7df24a62.json,"The model identifies the target output location by finding a group of pixels in the input that matches the relative offset pattern of the template shape, and extracts that subgrid as the predicted output."
+7fe24cdd.json,"The 3x3 input grid is expanded into a 6x6 grid consisting of four quadrants: Top-Left is the original input, Top-Right is rotated 90 degrees clockwise, Bottom-Left is rotated 270 degrees clockwise, and Bottom-Right is rotated 180 degrees clockwise."
+7f4411dc.json,"Extract and keep only the maximal solid rectangular sub-grids of the non-zero color, removing all isolated stray pixels and protrusions."
+7e0986d6.json,Minority color pixels surrounded by 2 or more dominant-color neighbors are converted to the dominant color; those with fewer than 2 dominant-color neighbors become the background color (0).
+80af3007.json,"Create a presence matrix of the 3x3 blocks of 5s from the input, and reconstruct a 9x9 output grid by placing a consistent 3x3 pattern in the positions where blocks were present, and zeros elsewhere."
+810b9b61.json,"Detect closed hollow rectangular shapes made of color 1 and change their color to 3, while leaving open shapes and other configurations unchanged as 1."
+82819916.json,Replace the two colors of the template row using the mapping derived from the first two distinct colors of each input pattern row.
+83302e8f.json,"Analyzed the grid row indices and column intervals to locate specific values and holes, identifying coordinates of the target cells."
+834ec97d.json,"The original object moves down by one row, and the columns sharing the same parity as the object's column are filled with yellow pixels (color 4) from the top row down to the object's original row."
+8403a5d5.json,Draw vertical lines of the input color starting at the input column and extending right with a step of 2. Add gray (5) accents on row 0 in even gaps and row 9 in odd gaps.
+855e0971.json,"The grid is divided into uniform color regions. Within horizontal bands, any `0` value causes its entire column within that band to become `0`. Within vertical strips, any `0` value causes its entire row within that strip to become `0`."
+846bdb03.json,"Extract the dimensions from the bounding frame (4s), split the rich shape into two halves, and swap their left-to-right positions to match the order of the vertical lines inside the frame (red/2 on the left, teal/8 on the right)."
+85c4e7cd.json,Reversed the colors of the concentric rectangular layers from the outside to the inside.
+8731374e.json,"For each marker digit inside the background rectangle, the entire row and column intersecting at that marker's position are filled with the marker digit, leaving the rest as the background."
+868de0fa.json,"Fill the interior of each blue enclosing square shape depending on the parity of its dimensions: fill with orange (7) if dimensions are odd, and with red (2) if dimensions are even."
+88a10436.json,Locate the gray marker and stamp a duplicate of the multi-colored shape such that the shape's top-left corner is positioned relative to the gray marker.
+88a62173.json,Identifies the four 2x2 quadrants formed by the central cross of zeros and extracts the unique odd-one-out quadrant.
+8be77c9e.json,"Appended a vertically flipped (upside-down) copy of the original input grid directly beneath it, doubling the grid's height."
+890034e9.json,The task involves identifying source rectangles and moving or copying them to destination locations within the grid based on the transformation rules demonstrated in the examples.
+8d5021e8.json,"The input grid is tiled into a $3 \times 2$ macro-grid, where the blocks in the first column are horizontally flipped versions of the input grid, and the blocks in the second column are the identity (original) of the input grid."
+8a004b2b.json,"Scale each cell of a smaller template grid into an N x N block of the corresponding color, and enclose the resulting grid with a bounding box of color 4 at the four corners."
+8e1813be.json,"The output grid dimensions are determined by the gray block (5), and its rows are filled by extracting the top-to-bottom horizontal color lines from the input grid."
+8e5a5113.json,"Subgrid 1 remains unchanged, Subgrid 2 is formed by taking columns of Subgrid 1 bottom-to-top as rows, and Subgrid 3 is formed by taking rows of Subgrid 1 bottom-to-top and reversing them left-to-right, separated by columns of 5s."
+8d510a79.json,"Each column containing a colored marker extends vertically towards the respective outer or inner boundary edge of the half-grid (top or bottom) depending on the color and edge rules, filling the intermediate rows accordingly."
+8eb1be9a.json,Extract the 3-row horizontal band of non-zero pixels and tile it vertically downwards to fill the entire height of the grid.
+8efcae92.json,Extract the rectangular block from the input grid that contains the maximum number of '2's.
+90c28cc7.json,"Identify the bounding region of non-zero pixels, map the horizontal and vertical dividing lines to form a grid of cells, and sample the corresponding colors from the input image to construct the output grid."
+913fb3ed.json,"Marker pixels (3, 2, 8) in the input expand into 3x3 squares with specific surrounding frame colors (magenta 6, blue 1, and yellow 4 respectively)."
+8f2ea7aa.json,Replicate the input shape into four symmetric copies placed at specific $3 \times 3$ block positions across the $9 \times 9$ grid.
+91413438.json,"Count the number of zero pixels in the input grid to determine $K$. The output is a $(3K) \times (3K)$ grid composed of $K \times K$ blocks, where each non-zero pixel in the input determines the number of input copies placed in the output grid."
+9172f3a0.json,"Each cell in the 3x3 input grid is expanded into a 3x3 block of identical values matching that cell's color, resulting in a 9x9 output grid."
+91714a58.json,"Identify all solid rectangular blocks of uniform color and preserve only the largest one (by area), setting all other cells in the grid to 0."
+90f3ed37.json,Extend horizontal teal (8) segments with blue (1) pixels from their rightmost point to the right edge of the grid.
+928ad970.json,"Draw a rectangular border using the four gray markers (color 5) as boundary indicators, matching the color of the central object, while keeping the original object and markers intact."
+93b581b8.json,"Extracted the central 2x2 block and mapped its values to the four corners of the grid in a diagonally inverted (cross) fashion, with the size of each corner block determined by the original padding and capped at 2x2."
+941d9a10.json,"Gray partition lines divide the 10x10 grid into a 5x5 sub-region layout. Colors 1, 2, and 3 are placed at diagonal regions (0,0), (2,2), and (4,4) respectively."
+94f9d214.json,"Generated a 4x4 output grid where each cell is colored 2 (red) if and only if the corresponding cells in both the top and bottom 4x4 sections of the input grid are 0, and 0 otherwise."
+952a094c.json,Clear the interior of the frame and reflect the inner digits across the center to the exterior cells just outside the frame boundaries.
+95990924.json,"For each 2x2 block of gray pixels (5), place numbered corner markers diagonally outward from its four corners (1 at top-left, 2 at top-right, 3 at bottom-left, 4 at bottom-right) while preserving the original grid pixels."
+9565186b.json,Preserved the most frequent number (mode) in the input grid and replaced all other numbers with 5.
+963e52fc.json,"Extract the non-zero row from the input, identify its shortest repeating primitive pattern, and tile/repeat that pattern to double its length for the output row."
+97999447.json,"Extend the pattern from each non-zero pixel to the right edge of the grid, filling the remaining columns with an alternating sequence of the pixel's color and gray (5). All-zero rows remain unchanged."
+99b1bc43.json,"Treat the top and bottom 4x4 grids as binary matrices (where non-zero is 1), perform a cell-wise XOR operation between them, and output a 3 where the result is 1 and 0 otherwise."
+98cf29f8.json,"The moving block slides along the path of its pointer line towards the obstacle block by a distance equal to the length of the pointer line, consuming the pointer line until it directly touches the obstacle block."
+97a05b5b.json,"The output grid's dimensions are determined by the bounding box of the main shape (color 2) in the input. The background of the output is color 2, and smaller 3x3 colored patterns surrounding the main shape in the input are overlaid onto specific relative positions inside the output grid."
+995c5fa3.json,Parsing and separating grid rows by zero-value column separators into blocks to reconstruct the target grid.
+99fa7670.json,"For each marker, draw a horizontal line to the right edge of the grid and a vertical line from that rightmost point to the bottom edge. Lower markers overwrite higher ones."
+9af7a82c.json,"Count the frequency of each unique color in the input grid and construct an output grid where columns represent the unique colors ordered by descending frequency from left to right, and rows represent the frequency of each color (padded below with 0s up to the maximum frequency)."
+9aec4887.json,Construct a square output grid of size (L+2) x (L+2) using the four frame bars of length L along the outer edges (leaving corners as 0) and placing the central L x L teal shape in the hollow interior.
+9dfd6313.json,"Perform a matrix transposition on the input grid, reflecting elements across the main diagonal which consists of the number 5."
+9ecd008a.json,"Locate the 3x3 block of zeros (hole) in the input grid, then extract the values from the centrally symmetric region in the input grid (rotated by 180 degrees) using the formula Input(15 - (r_start + r), 15 - (c_start + c))."
+9d9215db.json,"Construct a 19x19 grid containing nested symmetric patterns (such as corner markers, rows/columns of alternating values like 3, and an octagonal ring of 8s) based on spatial coordinate rules."
+9f236235.json,"Partitioned the input into a block grid, extracted each block's uniform color, and applied a horizontal reflection."
+9edfc990.json,Filled horizontal intervals and enclosed regions of 0s between non-zero marker digits with 1s.
+a1570a43.json,Shift the red shape so that its top-leftmost pixel is positioned just inside the top-left corner of the green rectangular frame.
+a2fd1cf0.json,"Connect the red pixel to the green pixel using an L-shaped path of teal pixels (8), extending horizontally along the red pixel's row and then vertically along the green pixel's column."
+a3325580.json,"Count the frequency of each non-zero color, select the colors with the maximum frequency, and arrange them into columns in order of their leftmost appearance, with a height equal to the maximum frequency."
+a3df8b1e.json,"Generates a zigzag (triangle wave) pattern of a single '1' per row bouncing between the left and right edges of the grid, anchored at the bottom-left corner."
+a416b8f3.json,Duplicate the input grid horizontally to place an identical copy side-by-side.
+a5313dff.json,"Fill the interior of closed rectangular regions of red (2) borders with blue (1), while preserving any pre-existing interior elements."
+a5f85a15.json,"Along each diagonal line of non-zero pixels (slope of 1), pixels at 0-indexed odd positions (1, 3, 5, etc.) are transformed to color 4, while even positions remain unchanged."
+a48eeaf7.json,"Gray pixels aligned with the 2x2 red block horizontally, vertically, or diagonally move along their paths to stop immediately adjacent to the red square."
+a61ba2ce.json,"Assemble the four 2x2 quadrant shapes into a 4x4 grid, leaving the Top-Left, Top-Right, and Bottom-Right shapes unchanged while horizontally reflecting the Bottom-Left shape."
+a61f2674.json,"Find all vertical columns of gray pixels, change the tallest column to blue (1), the shortest column to red (2), and clear all other columns to 0."
+a65b410d.json,"Locate the horizontal segment of N twos starting at row r2. Rows above r2 are filled with N + k threes, row r2 has N twos, and rows below r2 are filled with decreasing counts of ones, padded with zeros."
+a699fb00.json,Scan horizontally row by row and replace any 0 that is sandwiched between two 1s (1 0 1) with a 2 (1 2 1).
+a68b268e.json,"Extracted the predicted 4x4 grid based on the sub-grid quadrant values (Top-Left, Top-Right, Bottom-Left, Bottom-Right) for each cell."
+a740d043.json,Extracted the bounding box of non-background pixels and replaced background color (1) with 0.
+a64e4611.json,Fills the vertical and horizontal background channels separating the distinct blocks of non-zero colors with color 3 (green) to create intersecting divider lines.
+a79310a0.json,Change all pixels of color 8 to color 2 and shift the entire shape down by 1 row.
+a85d4709.json,"Find the column index of the '5' in each row of the input grid, and fill the entire corresponding row in the output grid with a specific color based on that index (col 0 -> 2, col 1 -> 4, col 2 -> 3)."
+a87f7484.json,Identified the 3x3 block within the input grid that contains the maximum number of non-zero pixels and outputted that specific block.
+a78176bb.json,Remove all gray (5) pixels and generate parallel shifted copies of the original diagonal line based on the bounding column limits of the gray region.
+a9f96cdd.json,"Locate the red pixel (2) in the input grid and place specific colored pixels at its four diagonal neighbor positions (top-left: 3, top-right: 6, bottom-left: 8, bottom-right: 7), ignoring any out-of-bounds positions. All other cells remain 0."
+aabf363d.json,"Replace all pixels of the main shape with the color of the indicator pixel located at the bottom-left corner, and then clear the indicator pixel to black (0)."
+a8c38be5.json,"Extracts 3x3 colored objects from the input grid, determines their spatial positions relative to the center, and arranges them in the output 3x3 macro-grid based on their clockwise angular order."
+ac0a08a4.json,"Count the number of non-zero cells in the input grid to determine the scaling factor (block size). Each cell in the input expands into an N x N block of its respective color in the output grid, where N is the total count of non-zero cells."
+ae3edfdc.json,"Marker objects (3 and 7) move from their initial positions to form an orthogonal cross directly surrounding their corresponding target objects (2 and 1, respectively), preserving their relative directional orientation."
+a8d7556c.json,Identify 2x2 or larger contiguous blocks of 0s in the input grid and fill them with the value 2.
+ae4f1146.json,Count the number of blue pixels (1) in each of the four 3x3 subgrid blocks and select the block with the maximum count as the output.
+af902bf9.json,Identify rectangles formed by four yellow corner pixels (value 4) and fill their interiors with red pixels (value 2).
+aedd82e4.json,Isolate `2`-pixels that have no orthogonal `2`-neighbors and change their value to `1`; `2`-pixels with neighboring `2`-pixels and all other pixels remain unchanged.
+b0c4d837.json,"The number of teal (8) pixels in the 3x3 output grid is calculated as the height of the gray container minus the height of the teal block minus one. The resulting count of teal pixels is placed in the 3x3 grid in reading order, with the rest filled with zeros."
+b190f7f5.json,"Discard the marker region of 8s, scale the N x N input pattern up into an N x N macro-grid where each non-zero cell expands into an N x N cross shape and zero cells become all-zero blocks."
+b1948b0a.json,"Replaced all instances of the color 6 (magenta) with the color 2 (red), while leaving the color 7 (orange) unchanged."
+aba27056.json,The transformation fills the cavity inside the shape of 2s with the value 4.
+b2862040.json,"Connected components of 1s that enclose background regions (holes) are changed to 8s, while open shapes or lines remain 1s."
+b27ca6d3.json,"Overlaying bounding boxes (such as Box 4 and Box 5) onto the input grid containing specific values (like 2), where box interiors fill with 3 unless occupied by input values, and combining their outputs row by row."
+b230c067.json,"Identify connected teal (8) components, calculate their area, and recolor them based on size (smaller components become red (2), larger components become blue (1))."
+b60334d2.json,"Replace each grey (5) pixel and its 8-surrounding neighbors with a 3x3 pattern where the center is 0, orthogonal neighbors are 1, and corners are 5."
+b6afb2da.json,"For each rectangular block of gray (5) pixels, transform its pixels based on position: 4 corners become blue (1), other border pixels become yellow (4), and interior pixels become red (2). Background pixels (0) remain unchanged."
+b527c5c6.json,"Each green shape containing a single red pixel extends in a direction determined by the position of the red pixel (top, bottom, left, or right) toward the corresponding edge of the grid. The path is 3 units wide, with the red pixel extending as a straight line of 2s and the flanking lines filled with 3s."
+b548a754.json,"The shape stretches toward the teal marker's position (vertically or horizontally), repeating its interior fill pattern and removing the marker."
+b7249182.json,"Generate a symmetrical shape spanning between two seed pixels, with a fixed transverse width of 5 centered on the seed column, and an internal structure combining single-column lines, full transverse bars, and endpoint rows."
+b775ac94.json,"For each cluster of a main shape and colored single-pixel markers, replicate the main shape's geometry for each marker, recoloring the copy to match the marker's color and aligning it horizontally with the marker's column."
+b8825c91.json,"Reflected the clean half of the grid across the horizontal center line to overwrite the defective half, producing a vertically symmetric output."
+b782dc8a.json,"Perform a flood-fill from the seed pixels (`8`s) into the surrounding `0`s, filling the connected region with a checkerboard pattern based on cell coordinate parity: `4` if `r + c` is even, and `3` if `r + c` is odd."
+b91ae062.json,"Each cell in the input grid is expanded into an NxN block of its own color, where N is the number of distinct non-zero colors present in the input grid."
+b94a9452.json,"Identified the square object in the input grid, extracted its dimensions, and swapped the outer frame color with the inner core color in the output grid."
+b8cdaf2b.json,"Project the target color from the bottom row upwards in a symmetrical V-shape formation based on the center column, target width, and row difference."
+b9b7f026.json,Identify the object that contains an enclosed hole (background pixels completely surrounded by the object's color) and output its color value.
+ba26e723.json,Cells containing the value 4 in columns whose 0-indexed position is a multiple of 3 are changed to 6. All other values remain unchanged.
+bb43febb.json,"Preserve the outer border of each grey (5) rectangle as grey (5), but fill all internal cells with red (2)."
+bbc9ae5d.json,"The output grid expands downwards into a right-angled triangular shape with a height equal to half the input width, where each subsequent row increases the count of the initial non-zero digit by 1."
+ba97ae07.json,"At the intersection of a vertical and horizontal stripe, the stripe with the greater thickness wins. If thicknesses are equal, the stripe with the smaller color number wins and overwrites the intersection."
+bd4472b8.json,"Row 0 retains its original color sequence, Row 1 is filled with `5`s, and the remaining rows are filled by repeating each color from Row 0 as a solid horizontal row cyclically downwards."
+bc1d5164.json,"The 5x7 input grid is mapped to a 3x3 output grid by selecting specific rows (Row 0, union of Rows 1-3, and Row 4) and combining the 2-column left block and 2-column right block into 3 columns via logical OR on the middle column."
+bdad9b1f.json,"Extend the teal (8) vertical line across the entire height and the red (2) horizontal line across the entire width of the grid, placing a yellow (4) pixel at their intersection."
+bda2d7a6.json,"Extract concentric rectangular layers, determine the unique color sequence from outer to inner, and cyclically shift each layer's color backward by 1 position."
+be94b721.json,Extract the bounding box of the largest colored object (the object with the maximum pixel count) from the input grid.
+c0f76784.json,"Locate hollow gray square frames of varying sizes and fill their inner cavities (holes) with specific colors based on the hole's dimensions: 1x1 holes with magenta (6), 2x2 holes with orange (7), and 3x3 holes with teal (8)."
+beb8660c.json,"Extract non-zero horizontal segments, sort them in ascending order of length, right-align them and stack them above a fixed bottom floor of color 8, filling remaining spaces with 0."
+c1d99e64.json,Any row or column in the input grid consisting entirely of zeros is transformed into a row or column consisting entirely of twos in the output grid.
+c3e719e8.json,"Find the global mode N of the 3x3 input grid. For each row where N meets a row-mode condition, place a full copy of the 3x3 input grid at the corresponding (r*3, c*3) block position in the 9x9 output grid, filling all other cells with 0."
+c3f564a4.json,"Fill in erased pixels using a repeating diagonal sequence pattern based on the formula value(r, c) = ((r + c) mod M) + 1, where M is the maximum value in the grid (8)."
+c8f0f002.json,Replaced every instance of color 7 (orange) with color 5 (gray) while keeping all other colors unchanged.
+c59eb873.json,"Upscale the input grid by a factor of 2 in both dimensions, transforming each input pixel into a 2x2 block of the same color."
+c444b776.json,"The grid is partitioned into regions by yellow (4) lines, and the populated pattern from the source region (Top-Middle) is replicated across all other empty regions horizontally and vertically."
+c8cbb738.json,"Map each input object's position/quadrant to a specific geometric pattern (corners, edge-midpoints, horizontal inner, or vertical inner) in a 5x5 output grid while preserving the object's color."
+c9e6f938.json,"For each row in the input grid, append its horizontally reversed version to the end of the row, doubling the width."
+c9f8e694.json,Replace all grey pixels (5) in each row with the color of the first cell (column 0) of that same row.
+c909285e.json,"Extract the 5x5 subgrid designated by the framing color (8) from the 4x4 array of subgrids, and surround it with a 1-pixel border of that same framing color to form a 7x7 output grid."
+caa06a1f.json,Remove the background padding and complete the repeating diagonal/checkerboard alternating row pattern across the entire grid dimensions.
+cce03e0d.json,"The 3x3 input grid is expanded into a 9x9 output grid (a 3x3 arrangement of 3x3 blocks). A copy of the input grid is placed at the corresponding block coordinates wherever the input grid contains a '2', and all other blocks are filled with '0'."
+cbded52d.json,"The 8x8 grid is partitioned into a 3x3 layout of 2x2 blocks separated by rows and columns of zeros, populated based on the positions of identical non-1 numbers from input relationships."
+cdecee7f.json,"Extract non-zero elements from the input, sort them by column index, and arrange them into a 3x3 grid using a snake (boustrophedon) pattern."
+ce22a75a.json,"Replace each gray pixel (5) with a 3x3 block of blue pixels (1), which merge if they overlap or touch."
+ce4f8723.json,"Perform a cell-by-cell logical OR operation between the upper grid (treating 1 as true) and the lower grid (treating 2 as true), and represent any true result with a 3 and false with a 0 in the output grid."
+ce9e57f2.json,"For each vertical column of red blocks (2), the bottom half of the blocks (determined by floor of length divided by 2) are transformed into teal blocks (8), while the upper half remains red."
+d037b0a7.json,"For each column, any non-zero element propagates downwards, filling all empty cells below it in the same column with its value."
+ce602527.json,Extract the 3x5 bounding box corresponding to Object 1 from the test input.
+cf98881b.json,"Overlay the three 4x4 subgrids (using colors 4, 9, and 1) cell by cell based on a color priority hierarchy to form a single 4x4 output grid."
+d0f5fe59.json,"Count the number of connected components of color 8 in the input grid to determine the size K, then generate a K x K identity matrix with 8s along the main diagonal."
+d06dbe63.json,"The grid represents a staircase of gray (5) pixels with a single cyan (8) marker on row 5, traced from top to bottom (or vice versa). The final output grid was cut off in the reasoning, but follows the parsed input rows 0-12."
+d07ae81c.json,"Cells in the grid are colored based on Manhattan distance from specific source points. For each source, cells at an even Manhattan distance are painted with the source's color. Sources are processed in order, with later sources overwriting earlier ones where their patterns intersect."
+d10ecb37.json,Extract the 2x2 subgrid from the top-left corner of the input grid.
+d23f8c26.json,Extract the exact center column from the input grid and set all other cells in the output grid to 0.
+d13f3404.json,Each non-zero cell in the 3x3 input projects a downward-right diagonal ray (slope 1) into the 6x6 output grid starting from its own position and continuing downwards.
+d22278a0.json,Generated Sierpinski triangle fractal patterns in the quadrants based on orientation and color rules.
+d364b489.json,"For each pixel with a value of 1, expand it into a cross pattern: the center remains 1, the top neighbor becomes 2, the bottom neighbor becomes 8, the left neighbor becomes 7, and the right neighbor becomes 6, subject to grid boundaries."
+d2abd087.json,"Color the components based on their size, where components of a specific size (such as size 6) are colored red."
+d406998b.json,"Connected components of 5s are traversed top-to-bottom, and their pixels are modified to alternate with 3s based on the column parity of the component's starting pixel."
+d43fd935.json,"Non-zero markers that share a row or column with the central 2x2 green block project lines of their own color towards the block, filling intervening empty cells."
+d4a91cb9.json,"Connect the marker digits '8' and '2' with an L-shaped path of '4's, using the row index of '2' and the column index of '8' to form the corner."
+d4469b4b.json,"Maps the primary input color to a specific 3x3 gray (5) pixel shape (cross for color 1, T-shape for color 2, L-shape for color 3)."
+d511f180.json,"Swap all occurrences of the number 5 with the number 8, and all occurrences of 8 with 5, leaving all other numbers unchanged."
+d4f3cd78.json,Fill the interior of the gray container with teal pixels and extend a teal tail from the gap in the container's border outward to the nearest edge of the grid.
+d5d6de2d.json,Identify hollow red (2) square or rectangular outlines and fill their internal empty interior spaces with green (3) pixels.
+d631b094.json,Count the occurrences of the non-zero color in the input grid and construct a 1-row output grid of that length filled with the color's value.
+d89b689b.json,"Locate the 2x2 teal (8) block and gather the four surrounding pixels from the four quadrants into this 2x2 area, maintaining their relative positions while clearing the rest of the grid."
+d687bc17.json,"Interior pixels whose colors match one of the four border colors move perpendicularly to the inner edge adjacent to that border, while pixels with non-matching colors are deleted."
+d6ad076f.json,"Draw a cyan (8) bridge in the gap between two separated rectangular blocks, spanning the gap distance and centered in the overlapping section with a thickness equal to the overlap minus 2."
+d8c310e9.json,Identify the repeating pattern unit in each non-zero row and extend it across the entire 15-column width of the grid.
+d90796e8.json,Orthogonally adjacent green (3) and red (2) cells interact: the green cell turns teal (8) and the red cell disappears (0). Non-adjacent cells remain unchanged.
+d9f24cd1.json,"Vertical lines of '2's extend upwards from the bottom row, and when they encounter a '5' in their path, they shift one column to the right for all rows above the obstacle."
+d9fac9be.json,Count the number of connected components for each non-zero color and output the color with the maximum number of components.
+dae9d2b5.json,"Split the 3x6 grid into two 3x3 halves and combine them using a logical OR operation, replacing any non-zero values with 6."
+dbc1a6ce.json,"Reconstruct rows based on column positions of values like 8 and 1, filling in horizontal lines between specified columns as required."
+db3e9e38.json,"Expand a triangular pyramid upwards from the bottom of the orange (7) vertical line, alternating between colors 7 and 8 based on horizontal distance parity from the center column, leaving everything else as 0."
+dc0a314f.json,Locates a 5x5 block of 3s acting as a reference window and extracts/combines the corresponding 5x5 subgrid based on its positional coordinates.
+dc1df850.json,"For every occurrence of the number 2, place 1s in all 8 surrounding positions to form a 3x3 square centered at the 2, while preserving all other numbers."
+dc433765.json,Object 3 moves one step closer to the stationary object 4 along the shortest path.
+db93a21d.json,"Color 9 blocks are enclosed by an expanding 3-border that fills gaps between neighbors and grid edges, and vertical 1-stripes extend downwards from the bottom of each block's 3-border to the grid edge or next obstacle."
+ddf7fa4f.json,"Match each gray blob's horizontal column span with the column index of the color markers in the top row, and replace the gray pixels with the corresponding marker color."
+ded97339.json,"Connect pairs of points of color 8 that share the same row or column with straight lines of color 8, leaving points with no sharing row/column isolated."
+de1cd16c.json,"Find the distinct background regions, count the occurrences of the minority marker color in each region, and return the background color of the region with the maximum count."
+e179c5f4.json,"The output grid is filled with 8s except for one 1 per row, which moves in a triangle wave (zigzag) pattern across the columns from the top to the bottom row."
+e3497940.json,"Split the grid into left and right 10x4 sub-grids around the central gray column, horizontally flip the right sub-grid, and combine them by taking the non-zero values from either side."
+e21d9049.json,"Extend the repeating sequences of the intersecting horizontal and vertical line segments across the entire respective row and column of the grid, while leaving all other cells as 0."
+e26a3af2.json,"Identify contiguous bands (vertical or horizontal stripes) containing noisy pixels, determine the dominant color for each band, and fill the entire band uniformly with that dominant color."
+e48d4e1a.json,"Count the gray pixels N, remove them, shift the primary-colored vertical line left by N columns, and shift the horizontal line down by N rows."
+e40b9e2f.json,Expanded a central checkerboard core pattern by 1 pixel in all directions to form a symmetrical frame with reflected marker pixels.
+e5062a87.json,Horizontally reflects color 2 across the central column (column 5) and fills enclosed spaces.
+e50d258f.json,Extract the sub-grid that contains the maximum number of red (2) pixels.
+e509e548.json,"Classify green connected components by their shape: T-shaped or anchor-like structures are colored red (2), while all other shapes (U-shapes, C-shapes, frames, and large L-shapes) are colored magenta (6)."
+e73095fd.json,The task involves analyzing grid connectivity and enclosed regions bounded by rows and columns of specific values.
+e76a88a6.json,"Replace every gray placeholder region with an exact copy of the source pattern, preserving top-left alignment, while keeping the original source pattern unchanged."
+e6721834.json,"The input grid is split into two halves, with one half serving as the base grid and the other as an overlay. The overlay elements are shifted by a calculated offset and merged onto the base grid to form the final output of half the original dimensions."
+e8593010.json,The reasoning text is incomplete and cuts off during hypothesis testing. The exact rule and prediction cannot be reliably extracted from the text.
+e9614598.json,"Locate the two pixels with value '1', find their midpoint, and draw a 3x3 plus sign of '3's centered at that midpoint while preserving the original '1's."
+e8dc4411.json,"The position of the surrounding 0-cluster relative to the source pixel determines the projection direction (vertical inversion) and horizontal drift/slope, replicating the source color in the resulting pattern."
+e9afcf9a.json,Weave the two colors from the input rows into a 2x6 alternating checkerboard pattern.
+ea32f347.json,"Count the number of pixels in each of the three gray shapes, rank them by size in descending order, and recolor them: the longest becomes blue (1), the medium becomes yellow (4), and the shortest becomes red (2)."
+e98196ab.json,Combine the top and bottom subgrids (separated by a row of gray pixels) into a single 5-row grid by superimposing corresponding rows from each half.
+ea786f4a.json,"Replace the cells along the two main diagonals (forming an 'X' shape) with 0, while keeping the rest of the grid filled with the original background color."
+eb281b96.json,"The output grid is formed by taking the first row of the input, followed by repeating the symmetric wave unit (from row 2 up to the peak row $N$ and back down to 1) twice."
+ec883f72.json,An inner object enclosed within a container shape is projected or reflected outwards into the empty space beyond the container's opening or corner.
+eb5a1d5d.json,"Construct a concentric square grid of size (2K+1)x(2K+1) based on the nested layers of the input, starting with the background color as the outer border, followed by alternating inward layers, with the innermost layer at the center."
+ed36ccf7.json,"Extract the columns of the input grid, compute their sums, sort the columns based on the total number of non-zero pixels in the grid (ascending if >5, descending if <=5), and place the sorted columns as the rows of the output grid."
+ef135b50.json,Fill any sequence of 0s that lies horizontally between two 2s on the same row with 9s.
+ecdecbb3.json,"Red pixels act as ray sources, emitting orthogonal paths to cyan lines and creating 3x3 cyan intersection boxes with a central red pixel."
+f15e1fac.json,"The output pattern places 4-element blocks of color 8 diagonally stepping upwards across repeating sets of three rows (columns 0-3, then 4-7, then 8-11), offset vertically based on the positions of the source rows."
+f25ffba3.json,"The top half of the output grid (rows 0-4) is formed by vertically reflecting the active bottom rows (rows 5-9) of the input, while the bottom half (rows 5-9) is an exact copy of those same input rows."
+f1cefba8.json,"Protrusions from the inner shape define horizontal and vertical coordinate lines. These lines extend across the grid, rendering in the inner shape's color outside the outer shape and in the outer shape's color where they intersect the outer shape."
+f35d900a.json,Create 3x3 blocks at the four corner points where the center retains its original color and the surrounding 8 pixels take the alternate color. Connect the blocks with dashed lines of color 5 at odd intervals in the gaps.
+f5b8619d.json,"Fill zeros with 8 in active columns (columns containing at least one non-zero number), then tile the resulting grid in a 2x2 arrangement."
+f76d97a5.json,Replaced the color 5 with the secondary color (3) and replaced the secondary color with 0 (background).
+f25fbde4.json,"Locate the yellow (4) connected component, extract its bounding box subgrid, and scale it up by 2x in both dimensions (replacing each pixel with a 2x2 block of the same color)."
+f8a8fe49.json,Translate the vertical positions of the gray objects relative to the container by subtracting 5 from their input row indices.
+f2829549.json,Reflected the right-side pattern horizontally across the central column and placed green (3) cells where the positional alignment with the left-side pattern matches the transformation rule.
+f8c80d96.json,"Identified the bounding box of the object, filled interior background pixels with gray (5), and filled the exterior space beyond the bounding box with alternating vertical stripes of gray (5) and the object color."
+fafffa47.json,"The output 3x3 grid places a '2' at positions where both the corresponding top 3x3 grid (with '9') and bottom 3x3 grid (with '1') contain a '0' (background), and '0' otherwise."
+f8ff0b80.json,Count the occurrences of each non-zero color in the input grid and generate a single-column output grid containing these colors sorted in descending order of their frequency.
+f8b3ba0a.json,Count the occurrences of non-background colors in the input grid and output them as a vertical column sorted in descending order of frequency.
+fcc82909.json,Locate 2x2 blocks of non-zero colored pixels and extend them downwards with a 2-column wide vertical tail of green pixels (color 3) whose length equals the count of unique colors within that 2x2 block.
+fcb5c309.json,"Locate the frame containing the greatest number of inner objects, and construct a new grid of the same dimensions using the inner color for both the border and the preserved relative positions of the interior pixels."
+feca6190.json,The output grid size is $5k \times 5k$ (where $k$ is the number of non-zero elements in the 1x5 input). Each non-zero element generates a diagonal line extending upwards and to the right from its position on the bottom row.
+ff28f65a.json,"Locate 2x2 blocks of red pixels in reading order and map them sequentially to specific positions on a 3x3 output grid (1st to (0,0), 2nd to (0,2), 3rd to (1,1), etc.), filling those mapped cells with 1s and the rest with 0s."
+f9012d9b.json,Fill in the missing region (filled with 0s) of the grid by extrapolating the repeating base tile pattern found in the non-zero areas.
+ff805c23.json,"The reasoning cuts off before concluding, but the task is to extract a predicted 5x5 grid corresponding to the subgrid under the blue block or the specific extracted region based on the pattern. Since the text is truncated and no complete prediction is available in the provided text, a default empty 5x5 grid is outputted as a fallback."
