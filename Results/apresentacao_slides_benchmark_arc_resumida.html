@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark ARC-AGI: Raciocínio vs Memorização (Versão Apresentação Pública)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #F5F1EA;
+      --bg-deck: #FFFFFF;
+      --bg-cream: #FAF7F2;
+      --border-cream: #E4DCD0;
+      --border-dark: #C8BCAC;
+      
+      --brown-deep: #2A1F17;
+      --brown-espresso: #443224;
+      --brown-cognac: #B86728;
+      --brown-caramel: #D48B47;
+      --brown-terracotta: #A64426;
+      
+      --text-main: #231B15;
+      --text-muted: #574B40;
+      --text-light: #8C7C6F;
+
+      --shadow-deck: 0 12px 36px -8px rgba(42, 31, 23, 0.09), 0 4px 12px -2px rgba(42, 31, 23, 0.04);
+      --shadow-card: 0 2px 6px rgba(42, 31, 23, 0.04), 0 1px 3px rgba(42, 31, 23, 0.02);
+      --radius-deck: 22px;
+      --radius-card: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .deck-container {
+      width: 100%;
+      max-width: 1380px;
+      background: var(--bg-deck);
+      border-radius: var(--radius-deck);
+      border: 1px solid var(--border-cream);
+      box-shadow: var(--shadow-deck);
+      display: flex;
+      flex-direction: column;
+      min-height: 780px;
+      overflow: hidden;
+    }
+
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 40px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-cream);
+    }
+    
+    .topic-pill {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 5px 16px;
+      border-radius: 20px;
+      background: #F3ECE2;
+      color: var(--brown-espresso);
+      border: 1px solid #DFD2C2;
+    }
+
+    .slide-counter {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--brown-espresso);
+    }
+
+    .progress-track { width: 100%; height: 5px; background: #EDE6DC; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brown-espresso), var(--brown-cognac), var(--brown-caramel));
+      transition: width 0.3s ease;
+    }
+
+    .slide-viewport {
+      flex: 1;
+      padding: 36px 54px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: var(--bg-cream);
+    }
+
+    .slide {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      width: 100%;
+    }
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--brown-deep); }
+    .slide-title { font-size: 2.45rem; font-weight: 800; line-height: 1.15; margin-bottom: 6px; }
+    .slide-subtitle { font-size: 1.12rem; color: var(--text-muted); margin-bottom: 24px; font-weight: 500; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
+    .badge-gemma { background: #F5EAE0; color: #5C3214; border: 1px solid #E5D5C5; }
+    .badge-gemini { background: #E8F0F5; color: #1A4663; border: 1px solid #CADBE7; }
+    .badge-success { background: #EAF3EC; color: #1B582E; border: 1px solid #C4DFC8; }
+    .badge-danger { background: #FBECE9; color: #8B2519; border: 1px solid #F3C9C3; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-cream);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+    }
+    .card-brown { border-left: 6px solid var(--brown-espresso); }
+    .card-cognac { border-left: 6px solid var(--brown-cognac); }
+    .card-terracotta { border-left: 6px solid var(--brown-terracotta); }
+    .card-success { border-left: 6px solid #2D6A4F; }
+    .card-danger { border-left: 6px solid var(--brown-terracotta); }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--brown-deep);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-body {
+      font-size: 1.02rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .card-body ul { list-style: none; padding-left: 0; }
+    .card-body li { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+    .card-body li::before { content: "▪"; color: var(--brown-cognac); font-size: 1.3rem; line-height: 1; }
+
+    .stat-hero {
+      text-align: center;
+      padding: 20px 14px;
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-cream);
+      background: #FFFFFF;
+      box-shadow: var(--shadow-card);
+    }
+    .stat-hero-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--brown-deep);
+    }
+    .stat-hero-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-cream);
+      background: #FFFFFF;
+      box-shadow: var(--shadow-card);
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    table.data-table th {
+      background: #3A2B20;
+      color: #FAF6F0;
+      font-weight: 800;
+      padding: 14px 18px;
+      font-family: 'Outfit', sans-serif;
+      text-align: left;
+    }
+    table.data-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-cream);
+      color: var(--text-main);
+    }
+    table.data-table tr:nth-child(even) td { background: #FAF7F2; }
+    table.data-table tr.highlight td { background: #FDF0EE; font-weight: 700; }
+
+    /* Visual Grid Demos */
+    .matrix-box {
+      display: inline-grid;
+      gap: 3px;
+      background: #231B15;
+      padding: 4px;
+      border-radius: 6px;
+    }
+    .m-cell { width: 16px; height: 16px; border-radius: 2px; }
+    .c0 { background: #1C1612; }
+    .c1 { background: #2563EB; }
+    .c2 { background: #DC2626; }
+    .c3 { background: #16A34A; }
+    .c4 { background: #EAB308; }
+    .c5 { background: #64748B; }
+    .c8 { background: #06B6D4; }
+
+    .bottom-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 40px;
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-cream);
+    }
+    
+    .nav-btn {
+      padding: 11px 26px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid var(--border-cream);
+      background: #FFFFFF;
+      color: var(--brown-deep);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover:not(:disabled) { background: #F5EFE6; transform: translateY(-1px); }
+    .nav-btn.btn-primary { background: var(--brown-espresso); color: #FAF7F2; border-color: var(--brown-espresso); }
+    .nav-btn.btn-primary:hover:not(:disabled) { background: var(--brown-deep); }
+    .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    kbd {
+      background: #F0EAE1;
+      border: 1px solid #D5C8B8;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+    <div class="top-header">
+      <span class="topic-pill" id="slideTopic">Apresentação</span>
+      <div class="slide-counter" id="slideCounter">Slide 1 de 16</div>
+    </div>
+    
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="slide-viewport">
+
+      <!-- SLIDE 1: Capa -->
+      <div class="slide active" data-topic="Apresentação">
+        <div style="text-align: center; max-width: 1050px; margin: 0 auto;">
+          <div style="display: inline-flex; align-items: center; gap: 12px; margin-bottom: 22px;">
+            <span class="badge badge-gemma" style="font-size: 1rem; padding: 6px 18px;">Gemma 4 (31B-IT)</span>
+            <span style="font-weight: 800; color: var(--brown-cognac); font-size: 1.2rem;">VS</span>
+            <span class="badge badge-gemini" style="font-size: 1rem; padding: 6px 18px;">Gemini 3.5 Flash Lite</span>
+          </div>
+          <h1 class="slide-title" style="font-size: 3rem; margin-bottom: 16px;">
+            ARC-AGI: Raciocínio Genuíno ou Memorização de Dados Públicos?
+          </h1>
+          <p class="slide-subtitle" style="font-size: 1.25rem; margin-bottom: 36px;">
+            Avaliando a invariância de LLMs frente a perturbações geométricas e de cor.
+          </p>
+
+          <div class="grid-2" style="max-width: 900px; margin: 0 auto; text-align: left;">
+            <div class="card card-brown">
+              <div style="font-size: 0.85rem; font-weight: 800; color: var(--brown-espresso);">DISCENTES</div>
+              <div style="font-size: 1.2rem; font-weight: 800; margin-top: 4px;">Gabriel • Leonardo • Luis</div>
+            </div>
+            <div class="card card-cognac">
+              <div style="font-size: 0.85rem; font-weight: 800; color: var(--brown-cognac);">DOCENTES & AVALIADORES</div>
+              <div style="font-size: 1.2rem; font-weight: 800; margin-top: 4px;">Prof. André • Profa. Érica • Prof. João • Prof. Frederico</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: Contexto ARC-AGI -->
+      <div class="slide" data-topic="O Problema Científico">
+        <h2 class="slide-title">O Desafio do ARC-AGI</h2>
+        <p class="slide-subtitle">Por que pontuações elevadas geram desconfiança na comunidade científica?</p>
+
+        <div class="grid-2">
+          <div class="card card-brown">
+            <div class="card-title">🧩 O Teste de Inteligência Geral</div>
+            <div class="card-body">
+              <ul>
+                <li>Proposto por François Chollet para medir <strong>aquisição rápida de novas habilidades</strong>.</li>
+                <li>Grid 2D onde cada problema exige deduzir uma regra lógica inédita com Few-Shot.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-terracotta">
+            <div class="card-title">⚠️ O Fator da Contaminação</div>
+            <div class="card-body">
+              <ul>
+                <li>As 400 tarefas de treino estão <strong>públicas na web desde 2019</strong>.</li>
+                <li>Modelos modernos foram expostos massivamente a esses dados no pré-treinamento.</li>
+                <li><strong>Dúvida:</strong> A IA resolve por raciocínio visual ou apenas lembra do gabarito?</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: Hipótese Invariante -->
+      <div class="slide" data-topic="Hipótese Epistêmica">
+        <h2 class="slide-title">O Teste da Invariância Isomórfica</h2>
+        <p class="slide-subtitle">A regra lógica é a mesma, mas a representação espacial é alterada.</p>
+
+        <div class="grid-2">
+          <div class="card card-success">
+            <div class="card-title">🧠 Raciocínio Real (AGI)</div>
+            <div class="card-body">
+              <ul>
+                <li>Compreensão abstrata e invariante a eixos espaciais e paletas de cores.</li>
+                <li>A acurácia se mantém estável mesmo se o grid for girado ou espelhado.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-danger">
+            <div class="card-title">📦 Memorização (Overfitting Canônico)</div>
+            <div class="card-body">
+              <ul>
+                <li>Dependência estrita de coordenadas, orientação de leitura ou cores originais.</li>
+                <li>Qualquer perturbação causa colapso de acurácia ou alucinação de regras antigas.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: Metodologia em 2 Etapas -->
+      <div class="slide" data-topic="Arquitetura do Solver">
+        <h2 class="slide-title">Pipeline em 2 Etapas (solver.py)</h2>
+        <p class="slide-subtitle">Separação estrita entre indução de hipóteses e geração determinística de matrizes.</p>
+
+        <div class="grid-3">
+          <div class="card card-brown">
+            <div class="card-title">1. High Thinking</div>
+            <div class="card-body">
+              <ul>
+                <li>Temperatura $T = 0.6$.</li>
+                <li>Cadeia de Pensamento livre para exploração de hipóteses.</li>
+                <li>Mede o esforço cognitivo puro.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">2. Formatação Mínima</div>
+            <div class="card-body">
+              <ul>
+                <li>Temperatura $T = 0.0$ (Greedy).</li>
+                <li>Modo <em>Thinking: MINIMAL</em>.</li>
+                <li>Extração perfeita da matriz 2D sem ruído sintático.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-success">
+            <div class="card-title">3. Auditoria Automática</div>
+            <div class="card-body">
+              <ul>
+                <li>Workers paralelos multi-chaves.</li>
+                <li>Separação em 5 planilhas independentes.</li>
+                <li>Rastreamento de tarefas originais.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: As 4 Transformações 2D (COM GRIDS) -->
+      <div class="slide" data-topic="Geração das Novas Tasks">
+        <h2 class="slide-title">As 4 Transformações Aplicadas</h2>
+        <p class="slide-subtitle">Derivadas exclusivamente das tarefas acertadas por cada modelo.</p>
+
+        <div class="grid-4">
+          <div class="card card-brown" style="text-align: center;">
+            <div class="card-title" style="justify-content: center;">🔄 Rotação</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0;">
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c1"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+                <div class="m-cell c1"></div><div class="m-cell c2"></div><div class="m-cell c0"></div>
+                <div class="m-cell c1"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+              </div>
+              <span style="font-weight: 800; color: var(--brown-cognac);">➔</span>
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c1"></div><div class="m-cell c1"></div><div class="m-cell c1"></div>
+                <div class="m-cell c0"></div><div class="m-cell c2"></div><div class="m-cell c0"></div>
+                <div class="m-cell c0"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+              </div>
+            </div>
+            <p style="font-size: 0.88rem; font-weight: 700; color: var(--text-muted);">90° CW, 180°, 90° CCW<br>Input == Output</p>
+          </div>
+
+          <div class="card card-cognac" style="text-align: center;">
+            <div class="card-title" style="justify-content: center;">🪞 Reflexão</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0;">
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c3"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+                <div class="m-cell c3"></div><div class="m-cell c3"></div><div class="m-cell c0"></div>
+                <div class="m-cell c3"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+              </div>
+              <span style="font-weight: 800; color: var(--brown-cognac);">➔</span>
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c0"></div><div class="m-cell c0"></div><div class="m-cell c3"></div>
+                <div class="m-cell c0"></div><div class="m-cell c3"></div><div class="m-cell c3"></div>
+                <div class="m-cell c0"></div><div class="m-cell c0"></div><div class="m-cell c3"></div>
+              </div>
+            </div>
+            <p style="font-size: 0.88rem; font-weight: 700; color: var(--text-muted);">Espelhamento H / V<br>Input == Output</p>
+          </div>
+
+          <div class="card card-terracotta" style="text-align: center;">
+            <div class="card-title" style="justify-content: center;">🎨 Coloração</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0;">
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c0"></div><div class="m-cell c1"></div><div class="m-cell c0"></div>
+                <div class="m-cell c1"></div><div class="m-cell c2"></div><div class="m-cell c1"></div>
+                <div class="m-cell c0"></div><div class="m-cell c1"></div><div class="m-cell c0"></div>
+              </div>
+              <span style="font-weight: 800; color: var(--brown-cognac);">➔</span>
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c4"></div><div class="m-cell c8"></div><div class="m-cell c4"></div>
+                <div class="m-cell c8"></div><div class="m-cell c3"></div><div class="m-cell c8"></div>
+                <div class="m-cell c4"></div><div class="m-cell c8"></div><div class="m-cell c4"></div>
+              </div>
+            </div>
+            <p style="font-size: 0.88rem; font-weight: 700; color: var(--text-muted);">Permutação com Cor 0<br>Input == Output</p>
+          </div>
+
+          <div class="card card-danger" style="text-align: center;">
+            <div class="card-title" style="justify-content: center;">🌪️ Merged</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0;">
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c1"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+                <div class="m-cell c1"></div><div class="m-cell c2"></div><div class="m-cell c0"></div>
+                <div class="m-cell c0"></div><div class="m-cell c0"></div><div class="m-cell c0"></div>
+              </div>
+              <span style="font-weight: 800; color: var(--brown-terracotta);">➔</span>
+              <div class="matrix-box" style="grid-template-columns: repeat(3, 16px);">
+                <div class="m-cell c4"></div><div class="m-cell c4"></div><div class="m-cell c8"></div>
+                <div class="m-cell c4"></div><div class="m-cell c3"></div><div class="m-cell c4"></div>
+                <div class="m-cell c4"></div><div class="m-cell c4"></div><div class="m-cell c4"></div>
+              </div>
+            </div>
+            <p style="font-size: 0.88rem; font-weight: 700; color: var(--text-muted);">2 famílias combinadas<br>Input ≠ Output Livre</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: Acurácia Comparativa -->
+      <div class="slide" data-topic="Resultados • Acurácia">
+        <h2 class="slide-title">Taxas de Acurácia: Gemma vs. Gemini</h2>
+        <p class="slide-subtitle">Comparação direta dos dados oficiais obtidos em cada dataset.</p>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th>Acurácia Gemma (31B)</th>
+                <th>Acurácia Gemini (Flash Lite)</th>
+                <th>Diferença</th>
+                <th>Tendência</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Original (Treino)</strong></td>
+                <td><span class="badge badge-gemma">76.00%</span> (304/400)</td>
+                <td><span class="badge badge-gemini">67.50%</span> (270/400)</td>
+                <td><strong>+8.50 pp</strong></td>
+                <td>Gemma tem maior recall no dataset público</td>
+              </tr>
+              <tr>
+                <td><strong>Rotated</strong></td>
+                <td><span class="badge badge-success">87.17%</span> (265/304)</td>
+                <td><span class="badge badge-success">85.56%</span> (231/270)</td>
+                <td><strong>+1.62 pp</strong></td>
+                <td>Alta invariância rotacional em ambos</td>
+              </tr>
+              <tr>
+                <td><strong>Reflected</strong></td>
+                <td><span class="badge badge-success">87.50%</span> (266/304)</td>
+                <td><span class="badge badge-success">87.04%</span> (235/270)</td>
+                <td><strong>+0.46 pp</strong></td>
+                <td>Empate técnico em reflexão axial</td>
+              </tr>
+              <tr>
+                <td><strong>Coloration</strong></td>
+                <td><span class="badge badge-success">89.14%</span> (271/304)</td>
+                <td><span class="badge badge-success">84.44%</span> (228/270)</td>
+                <td><strong>+4.70 pp</strong></td>
+                <td>Gemma ligeiramente mais robusto em cores</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>Merged</strong></td>
+                <td><span class="badge badge-danger">44.50%</span> (263/591)</td>
+                <td><span class="badge badge-danger">35.93%</span> (194/540)</td>
+                <td><strong>+8.57 pp</strong></td>
+                <td><strong>Queda severa (-43 a -50 pp) em ambos</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: Gráfico Comparativo -->
+      <div class="slide" data-topic="Resultados • Gráficos">
+        <h2 class="slide-title">Dashboard Comparativo dos Modelos</h2>
+        <p class="slide-subtitle">Acurácia, consumo de tokens e tempo médio por tarefa.</p>
+
+        <div style="text-align: center; background: #FFFFFF; padding: 12px; border-radius: var(--radius-card); border: 1px solid var(--border-cream); box-shadow: var(--shadow-card);">
+          <img src="benchmark_comparativo_gemma_vs_gemini.png" alt="Comparativo ARC-AGI Gemma vs Gemini" style="max-width: 100%; max-height: 440px; border-radius: 8px; object-fit: contain;">
+        </div>
+      </div>
+
+      <!-- SLIDE 8: Quem Acerta Mais vs Quem é Mais Consistente -->
+      <div class="slide" data-topic="Análise Comparativa">
+        <h2 class="slide-title">Quem Acerta Mais vs. Quem é Mais Consistente?</h2>
+        <p class="slide-subtitle">Distinguindo volume absoluto de estabilidade perante transformações.</p>
+
+        <div class="grid-2">
+          <div class="card card-brown">
+            <div class="card-title">🏆 Maior Acurácia Absoluta: Gemma 31B</div>
+            <div class="card-body">
+              <ul>
+                <li>Lidera no Treino Original: <strong>76.0%</strong> (+8.5 pp).</li>
+                <li>Lidera no Merged: <strong>44.5%</strong> (+8.6 pp).</li>
+                <li>Maior capacidade paramétrica para reter regras complexas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">⚖️ Simetrias Atômicas: Empate Técnico</div>
+            <div class="card-body">
+              <ul>
+                <li>Reflexão: diferença de apenas <strong>0.46 p.p.</strong> (87.5% vs 87.0%).</li>
+                <li>Rotação: diferença de apenas <strong>1.62 p.p.</strong> (87.2% vs 85.6%).</li>
+                <li>Ambos possuem operadores funcionais para simetrias isoladas.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 9: Tokens -->
+      <div class="slide" data-topic="Tokens & Esforço">
+        <h2 class="slide-title">Tokens de Pensamento: Acertos vs. Erros</h2>
+        <p class="slide-subtitle">O comportamento do raciocínio profundo quando a IA acerta ou erra.</p>
+
+        <div class="grid-3" style="margin-bottom: 20px;">
+          <div class="stat-hero">
+            <div class="stat-hero-num" style="color: #2D6A4F;">~9.7k - 10.2k</div>
+            <div class="stat-hero-label">Tokens em Tasks Corretas</div>
+          </div>
+          <div class="stat-hero">
+            <div class="stat-hero-num" style="color: var(--brown-terracotta);">~15.5k - 16.2k</div>
+            <div class="stat-hero-label">Tokens em Tasks Incorretas</div>
+          </div>
+          <div class="stat-hero">
+            <div class="stat-hero-num" style="color: var(--brown-cognac);">-38%</div>
+            <div class="stat-hero-label">Economia ao 'Saber' a Regra</div>
+          </div>
+        </div>
+
+        <div class="card card-brown">
+          <div class="card-title">🔍 Insight dos Tokens</div>
+          <div class="card-body">
+            Quando a hipótese inicial está correta, o modelo converge rapidamente. Em tarefas ambíguas ou perturbadas (Merged), ele entra em loops exaustivos de busca gerando até 33.000 tokens que terminam em falha.
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 10: Tempo e Throughput -->
+      <div class="slide" data-topic="Latência & Throughput">
+        <h2 class="slide-title">Tempo de Execução e Throughput</h2>
+        <p class="slide-subtitle">A matemática do tempo: 99.9% de inferência pura nas TPUs.</p>
+
+        <div class="grid-2">
+          <div class="card card-cognac">
+            <div class="card-title">⚡ Gemini 3.5 Flash Lite</div>
+            <div class="card-body">
+              <ul>
+                <li>Média de <strong>28s a 35s por task</strong>.</li>
+                <li>Latência de resposta inicial: 1.38s.</li>
+                <li>Ideal para experimentação massiva e benchmarks de grande escala.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-brown">
+            <div class="card-title">🐢 Gemma 4 31B</div>
+            <div class="card-body">
+              <ul>
+                <li>Média de <strong>225s a 260s por task</strong>.</li>
+                <li>Geração a ~25-50 tokens/s nas TPUs.</li>
+                <li>Custo computacional ~8x maior para ganho modesto de acurácia.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 11: Estudo de Caso 1 -->
+      <div class="slide" data-topic="Estudo de Caso • Memorização">
+        <h2 class="slide-title">Estudo de Caso 1: A "Regra Fantasma"</h2>
+        <p class="slide-subtitle">Task f1cefba8 (Merged) — Alucinação direta da regra da base pública.</p>
+
+        <div class="grid-2">
+          <div class="card card-danger">
+            <div class="card-title">❌ O que o Modelo Escreveu</div>
+            <div class="card-body">
+              <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; background: #FBECE9; padding: 12px; border-radius: 6px; color: #8B2519; border: 1px solid #F3C9C3;">
+                "...following the cycle 2 -> 3 -> 8 -> 2..."
+              </p>
+              <p style="margin-top: 12px;">
+                Essa regra existia na task original do ARC público, mas <strong>foi removida na nossa task</strong>! O modelo ignorou os dados novos e usou a memória antiga.
+              </p>
+            </div>
+          </div>
+
+          <div class="card card-brown">
+            <div class="card-title">💡 Diagnóstico Científico</div>
+            <div class="card-body">
+              <ul>
+                <li>Evidência empírica direta de <strong>recuperação de pré-treino</strong>.</li>
+                <li>Diante de sobrecarga composicional, a dedução por contexto é desligada.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 12: Estudo de Caso 2 -->
+      <div class="slide" data-topic="Estudo de Caso • Falhas Espaciais">
+        <h2 class="slide-title">Estudo de Caso 2: Falhas Espaciais e de Eixo</h2>
+        <p class="slide-subtitle">Tasks 0ac8ac11, f7cb8069 e 04e656f5 — O viés de leitura canônica.</p>
+
+        <div class="grid-3">
+          <div class="card card-brown">
+            <div class="card-title">1. Task 0ac8ac11 (Reflexão)</div>
+            <div class="card-body">
+              Ao espelhar o grid, o modelo inverteu índices de colunas e desenhou alturas erradas, refletindo vício de leitura <em>Left-to-Right</em>.
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">2. Task f7cb8069 (Sementes)</div>
+            <div class="card-body">
+              Traçou perfeitamente as horizontais e a 1ª vertical, mas errou a 2ª vertical (coluna 7 em vez da 5), perdendo o eixo espacial.
+            </div>
+          </div>
+
+          <div class="card card-terracotta">
+            <div class="card-title">3. Task 04e656f5 (Recorte)</div>
+            <div class="card-body">
+              Falhou na inferência dimensional (gerou um quadrado 5x5 em vez de um retângulo 10x4 com padrão de bordas).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 13: Hipóteses Explicativas -->
+      <div class="slide" data-topic="Discussão Teórica">
+        <h2 class="slide-title">Hipóteses Explicativas do Comportamento</h2>
+        <p class="slide-subtitle">Três causas teóricas fundamentadas nos dados observados.</p>
+
+        <div class="grid-3">
+          <div class="card card-brown">
+            <div class="card-title">1. Heurísticas Parciais</div>
+            <div class="card-body">
+              Modelos possuem operadores para simetrias geométricas regulares (87%), mas não um motor espacial agnóstico a coordenadas.
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">2. Viés Canônico</div>
+            <div class="card-body">
+              O pré-treinamento autoregressivo em texto cria preferência por leituras padrão (de cima para baixo e da esquerda para a direita).
+            </div>
+          </div>
+
+          <div class="card card-danger">
+            <div class="card-title">3. Limite Composicional</div>
+            <div class="card-body">
+              No <em>Merged</em>, a combinação livre de operadores sobrecarrega o raciocínio dedutivo, provocando alucinações de regras do pré-treino.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 14: Cuidados Metodológicos -->
+      <div class="slide" data-topic="Rigor Epistêmico">
+        <h2 class="slide-title">Cuidados Metodológicos & Terminologia</h2>
+        <p class="slide-subtitle">O rigor científico necessário ao avaliar modelos caixa-preta.</p>
+
+        <div class="grid-2">
+          <div class="card card-brown">
+            <div class="card-title">🛡️ O que os Dados Sustentam</div>
+            <div class="card-body">
+              <ul>
+                <li>Alta estabilidade em simetrias atômicas ($T_{\text{in}} = T_{\text{out}}$).</li>
+                <li>Colapso drástico sob perturbações compostas ($T_{\text{in}} \neq T_{\text{out}}$).</li>
+                <li>Ocorrência de alucinações de regras antigas documentadas em log.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">⚠️ Postura Científica Cautelosa</div>
+            <div class="card-body">
+              <ul>
+                <li>Tratamos as conclusões como <strong>indícios e hipóteses empíricas</strong>, não como verdades absolutas sobre os pesos neurais.</li>
+                <li>O teste de invariância avalia o <em>comportamento observável</em> do modelo.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 15: Conclusões Finais -->
+      <div class="slide" data-topic="Conclusão Geral">
+        <h2 class="slide-title">Conclusão: Raciocínio vs. Memorização</h2>
+        <p class="slide-subtitle">A resposta consolidada à questão central da pesquisa.</p>
+
+        <div class="grid-2">
+          <div class="card card-brown">
+            <div class="card-title">🎯 Resposta à Pergunta Central</div>
+            <div class="card-body">
+              O desempenho dos LLMs no ARC decorre de um <strong>modelo híbrido</strong>: capacidade real de aplicar operadores simétricos básicos, combinada a uma <strong>vulnerabilidade acentuada quando a forma canônica memorizada é alterada</strong>.
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">📊 Resumo do Duelo</div>
+            <div class="card-body">
+              <ul>
+                <li><strong>Gemma 31B:</strong> Maior acurácia absoluta em todos os cenários (+8.5 pp treino, +8.6 pp merged).</li>
+                <li><strong>Gemini 3.5 Flash Lite:</strong> Maior eficiência operacional ($8\times$ mais rápido, empate técnico nas simetrias).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 16: Próximos Passos -->
+      <div class="slide" data-topic="Próximos Passos">
+        <h2 class="slide-title">Próximos Passos</h2>
+        <p class="slide-subtitle">Continuidade do projeto e formalização acadêmica.</p>
+
+        <div class="grid-3">
+          <div class="card card-brown">
+            <div class="card-title">📝 Artigo no Overleaf</div>
+            <div class="card-body">
+              Desenvolvimento e redação final do artigo científico em LaTeX no <strong>Overleaf</strong>, consolidando as tabelas e gráficos em alta resolução.
+            </div>
+          </div>
+
+          <div class="card card-cognac">
+            <div class="card-title">🔬 Modelos Pro</div>
+            <div class="card-body">
+              Avaliar se o scaling de modelos maiores (ex: <strong>Gemini 2.5 / 3.1 Pro</strong>) é capaz de mitigar o colapso de acurácia no dataset <em>Merged</em>.
+            </div>
+          </div>
+
+          <div class="card card-success">
+            <div class="card-title">🔄 Test-Time Scaling</div>
+            <div class="card-body">
+              Implementar pipelines de <em>Self-Correction</em> guiados por validação cruzada entre os pares de treino.
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px; font-size: 1rem; font-weight: 800; color: var(--text-light);">
+          UFRGS • Instituto de Informática • Projeto de Conclusão e Iniciação Científica (PCI)
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Footer -->
+    <div class="bottom-footer">
+      <button class="nav-btn" id="prevBtn" onclick="navSlide(-1)">← Anterior</button>
+      <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700;">
+        Use as setas <kbd>←</kbd> <kbd>→</kbd> ou a barra de espaço para navegar
+      </div>
+      <button class="nav-btn btn-primary" id="nextBtn" onclick="navSlide(1)">Próximo →</button>
+    </div>
+  </div>
+
+  <script>
+    let currentIdx = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressFill = document.getElementById('progressFill');
+    const slideCounter = document.getElementById('slideCounter');
+    const slideTopic = document.getElementById('slideTopic');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function renderSlide() {
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentIdx);
+      });
+
+      const activeElem = slides[currentIdx];
+      const topic = activeElem.getAttribute('data-topic') || 'Apresentação';
+      slideTopic.innerText = topic;
+
+      slideCounter.innerText = `Slide ${currentIdx + 1} de ${totalSlides}`;
+      progressFill.style.width = `${((currentIdx + 1) / totalSlides) * 100}%`;
+
+      prevBtn.disabled = currentIdx === 0;
+      nextBtn.disabled = currentIdx === totalSlides - 1;
+      nextBtn.innerText = currentIdx === totalSlides - 1 ? 'Concluir' : 'Próximo →';
+    }
+
+    function navSlide(dir) {
+      const target = currentIdx + dir;
+      if (target >= 0 && target < totalSlides) {
+        currentIdx = target;
+        renderSlide();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        navSlide(1);
+      } else if (e.key === 'ArrowLeft') {
+        navSlide(-1);
+      }
+    });
+
+    renderSlide();
+  </script>
+</body>
+</html>
