@@ -2,14 +2,14 @@
 **Estudo Comparativo entre Gemma 4 (31B-IT) e Gemini 3.5 Flash Lite sob Perturbações Espaciais Equivariantes e Assimétricas**
 
 * **Discentes:** Gabriel, Leonardo, Luis
-* **Docentes & Avaliadores:** Prof. André, Profa. Érica, Prof. João, Prof. Frederico
-* **Instituição:** Universidade Federal do Rio Grande do Sul (UFRGS) • Instituto de Informática • PCI
+* **Docentes & Avaliadores:** Prof. André, Profa. Érica, Prof. Frederico, Prof. João
+* **Instituição:** Universidade Federal do Rio Grande do Sul (UFRGS) • Instituto de Informática • Projeto em Ciência e Inovação (PCI)
 
 ---
 
-## 📌 Arquivos de Slides Criados
-1. 📖 **[Versão Completa (Roteiro do Orador)](file:///c:/Users/Gabriel/Desktop/Escola_Trabalho/Faculdade/UFRGS/5%C2%B0_semestre/PCI/Projeto%201/PCI-GrupoA/Results/apresentacao_slides_benchmark_arc_completa.html)** — Com explicações aprofundadas, notas de fala para a banca, tabelas completas e detalhamento metodológico.
-2. ⚡ **[Versão Enxuta (Apresentação Pública)](file:///c:/Users/Gabriel/Desktop/Escola_Trabalho/Faculdade/UFRGS/5%C2%B0_semestre/PCI/Projeto%201/PCI-GrupoA/Results/apresentacao_slides_benchmark_arc_resumida.html)** — Formato widescreen em tema Creme e Marrom, cartões visuais limpos, grids de matrizes, gráficos comparativos integrados e tópicos objetivos para projeção.
+## 📌 Links dos Slides Interativos em HTML
+* 📖 **[Versão Completa com Roteiro do Orador](file:///c:/Users/Gabriel/Desktop/Escola_Trabalho/Faculdade/UFRGS/5%C2%B0_semestre/PCI/Projeto%201/PCI-GrupoA/Results/apresentacao_slides_benchmark_arc_completa.html)**
+* ⚡ **[Versão Enxuta / Apresentação Pública (Light Mode)](file:///c:/Users/Gabriel/Desktop/Escola_Trabalho/Faculdade/UFRGS/5%C2%B0_semestre/PCI/Projeto%201/PCI-GrupoA/Results/apresentacao_slides_benchmark_arc_resumida.html)**
 
 ---
 
@@ -25,46 +25,47 @@
 
 ---
 
-## 📑 Estrutura Lógica dos 16 Slides
+## 📑 Resumo da Estrutura dos 16 Slides
 
-1. **Slide 1 — Capa Oficial:** Apresentação do projeto, autores, professores e vínculo com a UFRGS.
-2. **Slide 2 — O Desafio do ARC-AGI:** O benchmark de Chollet (2019) e o problema da ampla exposição pública das tarefas na internet.
-3. **Slide 3 — A Pergunta Central de Pesquisa:** Raciocínio genuíno por operadores abstratos vs. memorização contextual e dependência canônica.
+1. **Slide 1 — Capa Oficial:** Autoria (Gabriel, Leonardo, Luis), Professores (André, Érica, Frederico, João) e afiliação com a UFRGS.
+2. **Slide 2 — O Desafio do ARC-AGI:** François Chollet (2019) e o risco de contaminação prévia decorrente da disponibilidade pública das 400 tarefas de treino na internet.
+3. **Slide 3 — A Pergunta Central de Pesquisa:** Indução lógica pura vs. memorização contextual e dependência de canonicidade.
 4. **Slide 4 — Metodologia Experimental em 2 Etapas:**
-   * *Etapa 1 (High Thinking, $T=0.6$):* Cadeia de pensamento aberta e exploração dedutiva.
-   * *Etapa 2 (Formatação Determinística, $T=0.0$, Minimal):* Extração estrita da matriz sem ruído sintático.
-   * *A Matemática do Tempo:* Prova de que 99,9% do tempo medido corresponde à geração de tokens nas TPUs (150ms de RTT vs 250s de inferência).
+   * *Etapa 1 (High Thinking, $T=0.6$):* Cadeia de pensamento livre explorando hipóteses espaciais.
+   * *Etapa 2 (Formatação Determinística, $T=0.0$, Minimal):* Extração estrita do grid numérico.
+   * *A Matemática do Tempo:* Prova de que $>99.9\%$ do tempo medido corresponde ao esforço de inferência das TPUs (RTT de ~150ms vs ~250s de computação).
 5. **Slide 5 — As 4 Famílias de Transformação 2D (com Grids Visuais):**
    * *Rotação:* 90° CW, 180°, 90° CCW ($T_{\text{in}} = T_{\text{out}}$).
    * *Reflexão:* Espelhamento horizontal e vertical ($T_{\text{in}} = T_{\text{out}}$).
-   * *Coloração:* Permutação bijetiva da paleta de cores, incluindo a cor de fundo 0 ($T_{\text{in}} = T_{\text{out}}$).
-   * *Merged:* Combinação de 2 famílias distintas com transformações livres de entrada e saída ($T_{\text{in}} \neq T_{\text{out}}$).
-6. **Slide 6 — Tabela Comparativa de Acurácia:** Dados numéricos lado a lado com deltas e tendências observadas.
-7. **Slide 7 — Dashboard Visual Integrado:** Exibição da figura `benchmark_comparativo_gemma_vs_gemini.png` com os três gráficos de barras agrupadas.
+   * *Coloração:* Permutação 1:1 incluindo a cor de fundo 0 ($T_{\text{in}} = T_{\text{out}}$).
+   * *Merged:* Rotação 90° CW + Coloração de paleta mantendo coerência geométrica.
+6. **Slide 6 — Tabela Comparativa de Acurácia:** Dados consolidados com deltas e tendências observadas.
+7. **Slide 7 — Explorador Interativo de Gráficos:** Abas interativas para alternar entre *Visão 3-em-1*, *Taxa de Acurácia*, *Tokens de Pensamento*, *Tempo de Execução*, *Dashboard Gemma* e *Dashboard Gemini*.
 8. **Slide 8 — Quem Acerta Mais vs. Quem é Mais Consistente:**
-   * *Volume Bruto:* Gemma 31B vence em todos os cenários (+8.5 pp original, +8.6 pp merged).
+   * *Volume Bruto:* Gemma 31B lidera em todos os datasets (+8.5 pp original, +8.6 pp merged).
    * *Consistência Simétrica:* Empate técnico em Rotação e Reflexão (diferença menor que 1,6 pp).
    * *Ponto de Ruptura:* Ambos sofrem colapso de 43 a 50 pontos percentuais no Merged.
-9. **Slide 9 — Análise de Tokens de Raciocínio:**
-   * Tasks corretas consomem ~9.700 a 10.600 tokens (convergência rápida da hipótese).
-   * Tasks incorretas consomem ~15.500 a 16.200 tokens (loops exaustivos no espaço de busca).
+9. **Slide 9 — Análise de Tokens de Pensamento por Modelo:**
+   * *Gemma 31B:* 10.464 tokens (corretas) vs. 16.221 tokens (incorretas) [Pico de 39.623].
+   * *Gemini 3.5 Flash Lite:* 9.162 tokens (corretas) vs. 15.586 tokens (incorretas) [Pico de 33.643].
+   * *Insight:* Economia de 35% a 40% de tokens ao acertar; loops exaustivos ao falhar.
 10. **Slide 10 — Tempo e Throughput:**
-    * Gemini 3.5 Flash Lite é 7x a 8x mais rápido (~32s vs ~255s por tarefa).
+    * Gemini 3.5 Flash Lite opera 7x a 8x mais rápido (~32s vs ~255s por tarefa).
 11. **Slide 11 — Estudo de Caso 1 (A "Regra Fantasma"):**
-    * Na *Task f1cefba8*, o modelo escreveu textualmente no raciocínio a regra cíclica da base pública original (*"2 -> 3 -> 8 -> 2"*), mesmo após essa regra ter sido removida no JSON transformado, evidenciando recuperação direta de pré-treino.
+    * Na *Task f1cefba8*, o modelo reproduziu a regra antiga do dataset público no texto de raciocínio (*"cycle 2 -> 3 -> 8 -> 2"*), mesmo após essa regra ter sido removida no JSON transformado.
 12. **Slide 12 — Estudo de Caso 2 (Falhas Espaciais e Viés Canônico):**
-    * *Task 0ac8ac11:* Inversão de índices de colunas e erro de alturas em reflexão.
-    * *Task f7cb8069:* Desvio na coordenada da 2ª reta vertical (coluna 7 em vez de 5).
-    * *Task 04e656f5:* Erro dimensional severo (quadrado 5x5 em vez de retângulo 10x4).
-13. **Slide 13 — Discussão e Hipóteses Explicativas:**
-    * *Operadores Parciais:* Heurísticas funcionais para simetrias regulares.
-    * *Viés Canônico:* Tendência de leitura linear *Left-to-Right* e *Top-to-Bottom*.
-    * *Limite Composicional:* Explosão combinatória quando regras livres são compostas.
-14. **Slide 14 — Cuidados Metodológicos e Rigor Epistêmico:**
-    * Postura científica cautelosa (tratar os achados como indícios e hipóteses comportamentais).
-15. **Slide 15 — Conclusão Geral:**
-    * O sucesso no ARC-AGI público superestima a capacidade de raciocínio livre de contexto.
+    * *Task 0ac8ac11:* Inversão de índices de colunas e alturas em reflexão.
+    * *Task f7cb8069:* Desvio métrico na segunda reta vertical (coluna 7 em vez de 5).
+    * *Task 04e656f5:* Falha dimensional severa (quadrado 5x5 em vez de retângulo 10x4).
+13. **Slide 13 — Discussão e Hipóteses Explicativas (Cautela Epistêmica):**
+    * *Operadores Parciais:* Modelos podem ter desenvolvido representações heurísticas para simetrias regulares.
+    * *Viés Canônico:* A estrutura sequencial pode induzir preferências por leitura Top-to-Bottom e Left-to-Right.
+    * *Limite Composicional:* A combinação livre de operadores pode sobrecarregar a busca dedutiva.
+14. **Slide 14 — Cuidados Metodológicos e Rigor Científico:**
+    * Postura cautelosa tratando as conclusões como indícios comportamentais observáveis.
+15. **Slide 15 — Conclusões Finais:**
+    * O sucesso atual no ARC reflete um regime híbrido entre heurísticas geométricas elementares e memorização de configurações canônicas.
 16. **Slide 16 — Próximos Passos:**
-    * **Desenvolvimento do Artigo Final no Overleaf.**
-    * Avaliação de modelos de maior escala (Gemini 2.5 / 3.1 Pro).
-    * Mecanismos de auto-verificação em tempo de inferência (*Test-Time Scaling*).
+    * **1. Redação do Artigo Final no Overleaf.**
+    * **2. Implementação de Mecanismos de Auto-Verificação em Tempo de Inferência.**
+    * **3. Apresentação e Defesa na Disciplina de PCI (UFRGS).**
