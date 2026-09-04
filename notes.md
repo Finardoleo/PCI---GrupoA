@@ -313,3 +313,9 @@ A lógica demanda a extensão horizontal de um padrão rítmico localizado. O ar
   - Cerca de 11% a 15% das tasks originais deixam de ser resolvidas puramente por estarem rotacionadas ou espelhadas, sugerindo dependência de orientação canônica (ex: leitura Top-to-Bottom)
   - No dataset Merged, o desempenho de ambos os modelos desaba para 35% - 44% ($\approx -43\text{ a }-50\text{ p.p.}$ de queda).
   - Nos estudos de caso qualitativos (ex: Task f1cefba8), observou-se o modelo reproduzindo textualmente no raciocínio regras cíclicas antigas da base pública que não existiam mais no JSON transformado, evidenciando que, diante de composições espaciais complexas, o modelo tenta recorrer a padrões pré-treinados em vez de derivar a regra puramente por indução lógica.
+
+## 3. Vício de leitura Left-to-Right
+- Linearização de Matrizes 2D: Os modelos de linguagem (LLMs) não "enxergam" a matriz como uma imagem contínua em duas dimensões; eles recebem e geram uma sequência unidimensional de tokens linha por linha, da esquerda para a direita e de cima para baixo (0 0 1 \n 0 2 0 ...).
+- Causalidade Autoregressiva: No pré-treinamento maciço em texto ocidental e código, os tokens da esquerda atuam como âncoras causais para prever os tokens da direita. O modelo aprende a "pensar" da esquerda para a direita.
+- Conflito na Reflexão Espacial: Quando espelhamos uma tarefa do ARC horizontalmente, uma regra que antes "crescia da esquerda para a direita" passa a crescer da "direita para a esquerda". No entanto, o mecanismo de decodificação do LLM ainda precisa emitir os números da esquerda para a direita.
+- A Falha Observada: Na Task 0ac8ac11, ao tentar ordenar colunas espelhadas, o modelo precisaria emitir primeiro a coluna final antes de ter processado a coluna inicial, resultando em trocas de paridade de índices (desenhando nas colunas $0, 2, 4$ em vez de $1, 3, 5$) e invertendo a ordem relativa das alturas.
