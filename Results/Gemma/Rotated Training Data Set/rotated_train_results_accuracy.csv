@@ -67,7 +67,6 @@ c7230dd7.json,CORRECT
 cbca88e3.json,CORRECT
 cec84240.json,INCORRECT
 d03dd6d4.json,CORRECT
-d2ddb74d.json,CORRECT
 d93fbf93.json,INCORRECT
 c0e39f5e.json,CORRECT
 dd4150be.json,CORRECT
@@ -304,4 +303,4 @@ ffb61bd6.json,CORRECT
 f8a227d2.json,CORRECT
 ffd1df99.json,CORRECT
 f894ca10.json,CORRECT
-Batch Accuracy,87.21% (266/305)
+Batch Accuracy: 87.17% (265/304),
