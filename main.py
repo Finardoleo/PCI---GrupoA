@@ -74,7 +74,14 @@ class KeyPoolManager:
         with self.lock:
             return len(self.quarantined_keys) < len(self.all_keys)
 
-def process_file(filepath: str, output_file: str, append: bool, api_key: str = None) -> dict:
+def process_file(
+    filepath: str,
+    output_file: str,
+    append: bool,
+    api_key: str = None,
+    task_idx: int = None,
+    total_tasks: int = None
+) -> dict:
     try:
         path_obj = Path(filepath)
         if not path_obj.exists():
@@ -84,8 +91,16 @@ def process_file(filepath: str, output_file: str, append: bool, api_key: str = N
         task_name = path_obj.name
         masked_key = mask_api_key(api_key) if api_key else "Default"
         
-        # Executa a solução da task com a chave dedicada
-        result = solve_task(filepath, api_key=api_key)
+        progress_str = f"[{task_idx}/{total_tasks} ({task_idx/total_tasks*100:.1f}%)]" if (task_idx and total_tasks) else ""
+        task_label = f"{progress_str} {task_name}".strip()
+        
+        print(f"\n==================================================")
+        print(f"🚀 {progress_str} INICIANDO TASK: {task_name}")
+        print(f"   Worker Key: {masked_key} | Arquivo: {filepath}")
+        print(f"==================================================")
+        
+        # Executa a solução da task com a chave dedicada e o rótulo de progresso
+        result = solve_task(filepath, api_key=api_key, task_label=task_label)
         
         status = result.get("status", "UNKNOWN")
         timing = result.get("timing", {"reasoning": 0.0, "formatting": 0.0, "total": result.get("solve_time", 0.0)})
@@ -94,12 +109,12 @@ def process_file(filepath: str, output_file: str, append: bool, api_key: str = N
         time_str = format_time_string(timing)
         tokens_str = format_tokens_string(tokens)
         
-        print(f"\n========================================")
-        print(f"Task: {task_name} (Worker Key: {masked_key})")
-        print(f"Resultado: [{status}]")
-        print(f"Tempo de Inferência: {time_str}")
-        print(f"Tokens: {tokens_str}")
-        print(f"========================================\n")
+        print(f"\n==================================================")
+        print(f"✅ {progress_str} FINALIZADA: {task_name} (Worker Key: {masked_key})")
+        print(f"   Resultado: [{status}]")
+        print(f"   Tempo de Inferência: {time_str}")
+        print(f"   Tokens: {tokens_str}")
+        print(f"==================================================\n")
         
         # Salva imediatamente nos 5 arquivos CSV separados de forma thread-safe
         save_task_to_split_spreadsheets(output_file, task_name, result, append)
@@ -122,15 +137,30 @@ def process_file(filepath: str, output_file: str, append: bool, api_key: str = N
         save_task_to_split_spreadsheets(output_file, task_name, error_result, append)
         return error_result
 
-def worker_task_wrapper(task_path: str, output_file: str, append: bool, key_mgr: KeyPoolManager) -> dict:
+def worker_task_wrapper(
+    task_path: str,
+    output_file: str,
+    append: bool,
+    key_mgr: KeyPoolManager,
+    task_idx: int = None,
+    total_tasks: int = None
+) -> dict:
     """Wrapper para execução em thread isolada com aluguel de chave e captura de falhas de cota."""
     key = key_mgr.get_key()
     if not key:
         print(f"[!] Nenhuma chave API saudável disponível para processar '{task_path}'.")
         return None
         
+    progress_str = f"[{task_idx}/{total_tasks}]" if (task_idx and total_tasks) else ""
     try:
-        res = process_file(task_path, output_file, append=append, api_key=key)
+        res = process_file(
+            task_path,
+            output_file,
+            append=append,
+            api_key=key,
+            task_idx=task_idx,
+            total_tasks=total_tasks
+        )
         key_mgr.release_key(key)
         return res
     except QuotaExhaustedError as qe:
@@ -324,20 +354,29 @@ def run_tasks_batch(
     newly_processed_count = 0
     batch_timing = {"reasoning": 0.0, "formatting": 0.0, "total": 0.0}
     batch_tokens = {"prompt": 0, "candidates": 0, "thoughts": 0, "total": 0}
+    total_pending = len(pending_tasks)
     
     interrupted = False
     
     try:
         if workers == 1:
             # Execução sequencial tradicional
-            for i, task_path in enumerate(pending_tasks):
+            for i, task_path in enumerate(pending_tasks, start=1):
                 if not key_mgr.has_active_keys():
                     print("[!] Todas as chaves entraram em quarentena. Interrompendo lote.")
                     break
                     
-                print(f"\n>>> PROCESSANDO {i+1}/{len(pending_tasks)} -> {task_path}")
+                task_name = Path(task_path).name
+                print(f"\n>>> [LOTE: Task {i}/{total_pending} ({i/total_pending*100:.1f}%)] -> {task_name}")
                 current_append = not (is_new and newly_processed_count == 0)
-                res = worker_task_wrapper(task_path, output_file, current_append, key_mgr)
+                res = worker_task_wrapper(
+                    task_path,
+                    output_file,
+                    current_append,
+                    key_mgr,
+                    task_idx=i,
+                    total_tasks=total_pending
+                )
                 newly_processed_count += 1
                 
                 if res:
@@ -347,20 +386,34 @@ def run_tasks_batch(
                         batch_timing[k] += res.get("timing", {}).get(k, 0.0)
                     for k in batch_tokens:
                         batch_tokens[k] += res.get("tokens", {}).get(k, 0)
+                        
+                pct = (newly_processed_count / total_pending) * 100
+                acc = (correct_count / newly_processed_count * 100) if newly_processed_count > 0 else 0.0
+                print(f"[📊 Tracking do Lote: {newly_processed_count}/{total_pending} ({pct:.1f}%) concluídas | Acertos: {correct_count}/{newly_processed_count} ({acc:.1f}%)]")
         else:
             # Execução paralela com ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {}
-                for i, task_path in enumerate(pending_tasks):
-                    current_append = not (is_new and i == 0)
-                    f = executor.submit(worker_task_wrapper, task_path, output_file, current_append, key_mgr)
-                    futures[f] = task_path
+                for i, task_path in enumerate(pending_tasks, start=1):
+                    current_append = not (is_new and i == 1)
+                    f = executor.submit(
+                        worker_task_wrapper,
+                        task_path,
+                        output_file,
+                        current_append,
+                        key_mgr,
+                        task_idx=i,
+                        total_tasks=total_pending
+                    )
+                    futures[f] = (i, task_path)
                     
                 for f in as_completed(futures):
-                    task_path = futures[f]
+                    task_idx, task_path = futures[f]
+                    task_name = Path(task_path).name
                     try:
                         res = f.result()
                         newly_processed_count += 1
+                        status = res.get("status", "UNKNOWN") if res else "FAILED"
                         if res:
                             if res.get("is_correct", False):
                                 correct_count += 1
@@ -368,6 +421,10 @@ def run_tasks_batch(
                                 batch_timing[k] += res.get("timing", {}).get(k, 0.0)
                             for k in batch_tokens:
                                 batch_tokens[k] += res.get("tokens", {}).get(k, 0)
+                                
+                        pct = (newly_processed_count / total_pending) * 100
+                        acc = (correct_count / newly_processed_count * 100) if newly_processed_count > 0 else 0.0
+                        print(f"\n[📊 Tracking do Lote: {newly_processed_count}/{total_pending} ({pct:.1f}%)] Finalizada Task #{task_idx}: {task_name} -> [{status}] | Placar Parcial: {correct_count}/{newly_processed_count} ({acc:.1f}%)\n")
                     except Exception as e:
                         print(f"[!] Exceção na thread para task {task_path}: {e}")
                         
@@ -437,13 +494,21 @@ def main():
     
     # Modo de Retry
     if args.retry:
-        print(f"[+] Modo RETRY ativado com filtro '{args.retry}' para o modelo '{model_name}' em '{args.output}'...")
+        print(f"\n========================================")
+        print(f"[+] MODO RETRY ATIVADO: Filtro '{args.retry.upper()}'")
+        print(f"    Modelo: {model_name}")
+        print(f"    Planilha Alvo: {args.output}")
+        print(f"========================================")
         tasks_to_retry = get_retry_tasks(args.output, args.retry, model_name)
         if not tasks_to_retry:
             print(f"[+] Nenhuma task com filtro '{args.retry}' encontrada na planilha '{args.output}'.")
             return
             
-        print(f"[+] Encontradas {len(tasks_to_retry)} tasks para reexecução: {tasks_to_retry}")
+        print(f"\n[+] Total de {len(tasks_to_retry)} tasks identificadas para retry:")
+        for idx, t in enumerate(tasks_to_retry, start=1):
+            print(f"    [{idx:3d}/{len(tasks_to_retry)}] {t}")
+        print(f"----------------------------------------")
+        
         resolved_tasks = [find_task_filepath(t, data_dir) for t in tasks_to_retry]
         valid_tasks = [t for t in resolved_tasks if os.path.exists(t)]
         
@@ -451,6 +516,7 @@ def main():
             missing = set(resolved_tasks) - set(valid_tasks)
             print(f"[!] Aviso: {len(missing)} arquivos JSON não foram localizados no workspace: {missing}")
             
+        print(f"[+] Total de tasks válidas a serem processadas no batch: {len(valid_tasks)}\n")
         run_tasks_batch(valid_tasks, args.output, is_new=False, is_retry=True, max_workers=args.workers)
         return
 
