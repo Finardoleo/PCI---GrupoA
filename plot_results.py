@@ -582,6 +582,235 @@ def plot_dashboard_all(
     plt.close(fig)
     print(f"[+] Dashboard Geral 3-em-1 salvo em: {output_path}")
 
+def compare_models_intersection(out_dir: str = "Results"):
+    """
+    Executa o benchmark comparativo multi-modelo (Gemma vs Gemini)
+    restringindo a base de cálculo EXCLUSIVAMENTE à intersecção de
+    tasks que compartilham a mesma task original (N=252 base tasks).
+    Gera os gráficos comparativos e exibe tabela analítica no terminal.
+    """
+    print("\n" + "="*110)
+    print("   BENCHMARK COMPARATIVO ARC-AGI: GEMMA 4 (31B-IT) vs GEMINI 3.5 FLASH LITE")
+    print("   [BASE: INTERSECÇÃO ESTRITA DE TASKS COM MESMA BASE ORIGINAL (N=252)]")
+    print("="*110)
+
+    # 1. Carrega dados de ambos os modelos
+    def load_clean(m_dir, map_sub):
+        meta_df = pd.read_csv(f"New Tasks/{map_sub}/transformed_tasks.csv")
+        m_map = {}
+        for _, row in meta_df.iterrows():
+            tid = str(row["New_Task_ID"]).strip().replace(".json", "")
+            orig = str(row["Original_Task"]).strip().replace(".json", "")
+            m_map[tid] = orig
+
+        data = {}
+        for folder, dlabel, _ in DATASET_ORDER:
+            fpath = os.path.join(m_dir, folder)
+            acc_p = glob.glob(f"{fpath}/*_accuracy.csv")
+            tok_p = glob.glob(f"{fpath}/*_tokens.csv")
+            tim_p = glob.glob(f"{fpath}/*_times.csv")
+            if not (acc_p and tok_p and tim_p):
+                continue
+
+            summary_tasks = {"Batch Accuracy", "Tempo do Batch", "Tokens do Batch", "Total", "Accuracy"}
+            acc_df = pd.read_csv(acc_p[0])
+            tok_df = pd.read_csv(tok_p[0])
+            tim_df = pd.read_csv(tim_p[0])
+
+            acc_c = acc_df[~acc_df["Task"].astype(str).str.strip().isin(summary_tasks)]
+            tok_c = tok_df[~tok_df["Task"].astype(str).str.strip().isin(summary_tasks)]
+            tim_c = tim_df[~tim_df["Task"].astype(str).str.strip().isin(summary_tasks)]
+
+            col = acc_c.columns[1]
+            m = pd.merge(acc_c[["Task", col]], tok_c[["Task", col]], on="Task", suffixes=("_acc", "_tok"))
+            m = pd.merge(m, tim_c[["Task", col]], on="Task")
+            m.rename(columns={f"{col}_acc": "status", f"{col}_tok": "tok_str", col: "time_str"}, inplace=True)
+            m["task_clean"] = m["Task"].astype(str).str.strip().str.replace(".json", "")
+            m["tokens"] = m["tok_str"].apply(parse_token_string)
+            m["time_s"] = m["time_str"].apply(parse_time_string)
+            m["is_correct"] = m["status"].astype(str).str.strip() == "CORRECT"
+
+            if folder == "Training Data Set":
+                m["orig_task"] = m["task_clean"]
+            else:
+                m["orig_task"] = m["task_clean"].apply(lambda x: m_map.get(x, x))
+
+            data[folder] = m
+        return data
+
+    gemma_data = load_clean("Results/Gemma", "Gemma")
+    gemini_data = load_clean("Results/Gemini_3.5_Flash_Lite", "Gemini")
+
+    # Intersecção de 252 tasks originais acertadas por ambos no Treino
+    gemma_tr_corr = set(gemma_data["Training Data Set"][gemma_data["Training Data Set"]["is_correct"]]["orig_task"])
+    gemini_tr_corr = set(gemini_data["Training Data Set"][gemini_data["Training Data Set"]["is_correct"]]["orig_task"])
+    shared_base = gemma_tr_corr.intersection(gemini_tr_corr)
+
+    header = f"{'Dataset':<20} | {'Gemma Acc (%)':<15} | {'Gemini Acc (%)':<15} | {'Diff Acc':<10} | {'Gemma Tok':<12} | {'Gemini Tok':<12} | {'Gemma Tempo':<12} | {'Gemini Tempo':<12} | {'Speedup'}"
+    print(header)
+    print("-" * 125)
+
+    ds_labels = []
+    acc_gm_list, acc_gn_list = [], []
+    tok_gm_list, tok_gn_list = [], []
+    tim_gm_list, tim_gn_list = [], []
+    cnt_gm_list, cnt_gn_list = [], []
+
+    for folder, dlabel, _ in DATASET_ORDER:
+        if folder not in gemma_data or folder not in gemini_data:
+            continue
+        gm = gemma_data[folder]
+        gn = gemini_data[folder]
+
+        gm_sub = gm[gm["orig_task"].isin(shared_base)]
+        gn_sub = gn[gn["orig_task"].isin(shared_base)]
+
+        gm_corr = gm_sub[gm_sub["is_correct"]]
+        gn_corr = gn_sub[gn_sub["is_correct"]]
+
+        gm_acc = (len(gm_corr) / len(gm_sub) * 100) if len(gm_sub) else 0.0
+        gn_acc = (len(gn_corr) / len(gn_sub) * 100) if len(gn_sub) else 0.0
+        diff_acc = gm_acc - gn_acc
+
+        gm_tok = gm_corr["tokens"].mean()
+        gn_tok = gn_corr["tokens"].mean()
+        gm_tim = gm_corr["time_s"].mean()
+        gn_tim = gn_corr["time_s"].mean()
+        spd = gm_tim / gn_tim if gn_tim > 0 else 0.0
+
+        ds_labels.append(dlabel)
+        acc_gm_list.append(gm_acc)
+        acc_gn_list.append(gn_acc)
+        tok_gm_list.append(gm_tok)
+        tok_gn_list.append(gn_tok)
+        tim_gm_list.append(gm_tim)
+        tim_gn_list.append(gn_tim)
+        cnt_gm_list.append((len(gm_corr), len(gm_sub)))
+        cnt_gn_list.append((len(gn_corr), len(gn_sub)))
+
+        print(f"{dlabel:<20} | {gm_acc:6.2f}% ({len(gm_corr):3d}/{len(gm_sub):3d}) | {gn_acc:6.2f}% ({len(gn_corr):3d}/{len(gn_sub):3d}) | {diff_acc:+6.2f} pp | {gm_tok:10.1f} | {gn_tok:10.1f} | {gm_tim:10.1f}s | {gn_tim:10.1f}s | {spd:4.1f}x")
+
+    print("-" * 125)
+
+    # 2. Renderiza os gráficos comparativos
+    os.makedirs(out_dir, exist_ok=True)
+    COLOR_GEMMA = "#B86728"
+    COLOR_GEMINI = "#1D4ED8"
+    EDGE_COLOR = "#1E293B"
+
+    # Acurácia
+    fig, ax = plt.subplots(figsize=(11, 5.5), dpi=300)
+    x = np.arange(len(ds_labels))
+    w = 0.36
+    r1 = ax.bar(x - w/2, acc_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    r2 = ax.bar(x + w/2, acc_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1, r2)):
+        c1, t1 = cnt_gm_list[i]
+        c2, t2 = cnt_gn_list[i]
+        ax.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 1.8, f"{acc_gm_list[i]:.1f}%\n({c1}/{t1})", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#261B14")
+        ax.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 1.8, f"{acc_gn_list[i]:.1f}%\n({c2}/{t2})", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#1E3A8A")
+    ax.set_title("Taxa de Acurácia (%) — Intersecção de Tasks Compartilhadas (N=252)", fontsize=14, fontweight="bold", pad=18, color="#0F172A")
+    ax.set_ylabel("Acurácia (%)", fontsize=12, fontweight="bold", color="#334155")
+    ax.set_xticks(x)
+    ax.set_xticklabels(ds_labels, fontsize=11, fontweight="bold")
+    ax.set_ylim(0, 118)
+    ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.95, fontsize=10.5)
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, "comparativo_acuracia.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # Tokens
+    fig, ax = plt.subplots(figsize=(11, 5.5), dpi=300)
+    r1 = ax.bar(x - w/2, tok_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    r2 = ax.bar(x + w/2, tok_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1, r2)):
+        ax.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 200, f"{tok_gm_list[i]:,.0f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#261B14")
+        ax.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 200, f"{tok_gn_list[i]:,.0f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#1E3A8A")
+    ax.set_title("Consumo Médio de Tokens de Pensamento (Tarefas Corretas na Intersecção)", fontsize=14, fontweight="bold", pad=18, color="#0F172A")
+    ax.set_ylabel("Média de Tokens por Task", fontsize=12, fontweight="bold", color="#334155")
+    ax.set_xticks(x)
+    ax.set_xticklabels(ds_labels, fontsize=11, fontweight="bold")
+    ax.set_ylim(0, max(tok_gm_list) * 1.25)
+    ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.95, fontsize=10.5)
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, "comparativo_tokens.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # Tempo
+    fig, ax = plt.subplots(figsize=(11, 5.5), dpi=300)
+    r1 = ax.bar(x - w/2, tim_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    r2 = ax.bar(x + w/2, tim_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.1, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1, r2)):
+        spd_str = f"({tim_gm_list[i]/tim_gn_list[i]:.1f}×)" if tim_gn_list[i] > 0 else ""
+        ax.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 4, f"{tim_gm_list[i]:.1f}s", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#261B14")
+        ax.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 4, f"{tim_gn_list[i]:.1f}s\n{spd_str}", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#1E3A8A")
+    ax.set_title("Tempo Médio de Inferência Pura por Tarefa Correta (s) — Intersecção N=252", fontsize=14, fontweight="bold", pad=18, color="#0F172A")
+    ax.set_ylabel("Tempo Médio (segundos)", fontsize=12, fontweight="bold", color="#334155")
+    ax.set_xticks(x)
+    ax.set_xticklabels(ds_labels, fontsize=11, fontweight="bold")
+    ax.set_ylim(0, max(tim_gm_list) * 1.25)
+    ax.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.95, fontsize=10.5)
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, "comparativo_tempo.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # Dashboard 3-em-1
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5.8), dpi=300)
+    # 1. Acc
+    r1_acc = ax1.bar(x - w/2, acc_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    r2_acc = ax1.bar(x + w/2, acc_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1_acc, r2_acc)):
+        c1, t1 = cnt_gm_list[i]
+        c2, t2 = cnt_gn_list[i]
+        ax1.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 1.5, f"{acc_gm_list[i]:.1f}%\n({c1}/{t1})", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#261B14")
+        ax1.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 1.5, f"{acc_gn_list[i]:.1f}%\n({c2}/{t2})", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#1E3A8A")
+    ax1.set_title("Taxa de Acurácia (%)", fontsize=13, fontweight="bold", pad=14, color="#0F172A")
+    ax1.set_ylabel("Acurácia (%)", fontsize=11, fontweight="bold", color="#334155")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(ds_labels, fontsize=9.5, fontweight="bold", rotation=15)
+    ax1.set_ylim(0, 118)
+    ax1.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax1.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.9, fontsize=9.5)
+
+    # 2. Tok
+    r1_tok = ax2.bar(x - w/2, tok_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    r2_tok = ax2.bar(x + w/2, tok_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1_tok, r2_tok)):
+        ax2.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 180, f"{tok_gm_list[i]:,.0f}", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#261B14")
+        ax2.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 180, f"{tok_gn_list[i]:,.0f}", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#1E3A8A")
+    ax2.set_title("Média Tokens (Tarefas Corretas)", fontsize=13, fontweight="bold", pad=14, color="#0F172A")
+    ax2.set_ylabel("Tokens de Pensamento", fontsize=11, fontweight="bold", color="#334155")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(ds_labels, fontsize=9.5, fontweight="bold", rotation=15)
+    ax2.set_ylim(0, max(tok_gm_list) * 1.25)
+    ax2.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax2.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.9, fontsize=9.5)
+
+    # 3. Tim
+    r1_tim = ax3.bar(x - w/2, tim_gm_list, w, label="Gemma 4 (31B-IT)", color=COLOR_GEMMA, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    r2_tim = ax3.bar(x + w/2, tim_gn_list, w, label="Gemini 3.5 Flash Lite", color=COLOR_GEMINI, edgecolor=EDGE_COLOR, linewidth=1.0, zorder=3)
+    for i, (b1, b2) in enumerate(zip(r1_tim, r2_tim)):
+        spd_str = f"({tim_gm_list[i]/tim_gn_list[i]:.1f}×)" if tim_gn_list[i] > 0 else ""
+        ax3.text(b1.get_x() + b1.get_width()/2, b1.get_height() + 3.5, f"{tim_gm_list[i]:.1f}s", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#261B14")
+        ax3.text(b2.get_x() + b2.get_width()/2, b2.get_height() + 3.5, f"{tim_gn_list[i]:.1f}s\n{spd_str}", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#1E3A8A")
+    ax3.set_title("Tempo Médio de Inferência (s)", fontsize=13, fontweight="bold", pad=14, color="#0F172A")
+    ax3.set_ylabel("Segundos", fontsize=11, fontweight="bold", color="#334155")
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(ds_labels, fontsize=9.5, fontweight="bold", rotation=15)
+    ax3.set_ylim(0, max(tim_gm_list) * 1.25)
+    ax3.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
+    ax3.legend(loc="upper right", frameon=True, facecolor="#FFFFFF", framealpha=0.9, fontsize=9.5)
+
+    fig.suptitle("ARC-AGI Benchmark Comparativo — Intersecção de Tasks Compartilhadas (N=252)", fontsize=15, fontweight="bold", y=0.98, color="#0F172A")
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, "benchmark_comparativo_gemma_vs_gemini.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    print(f"\n[+] Todos os 4 gráficos comparativos atualizados com sucesso em '{out_dir}/'!")
+
 def main():
     parser = argparse.ArgumentParser(description="Plotador de Benchmarks ARC-AGI (Acurácia, Tokens e Tempo)")
     parser.add_argument(
@@ -597,11 +826,20 @@ def main():
         help="Calcula médias e totais de tokens e tempo considerando SOMENTE as tasks com status CORRECT (padrão: False / todas as tasks)"
     )
     parser.add_argument(
+        "--compare", "--intersection", action="store_true", default=False,
+        help="Gera o benchmark comparativo multi-modelo (Gemma vs Gemini) restrito à intersecção de tasks compartilhadas (N=252)"
+    )
+    parser.add_argument(
         "--output-dir", default=None,
-        help="Diretório onde os gráficos serão salvos (padrão: Results/<model>/)"
+        help="Diretório onde os gráficos serão salvos (padrão: Results/<model>/ ou Results/ se compare)"
     )
     
     args = parser.parse_args()
+
+    if args.compare:
+        out_dir = args.output_dir if args.output_dir else "Results"
+        compare_models_intersection(out_dir)
+        return
 
     # Normaliza caminho do modelo
     model_str = args.model.strip()

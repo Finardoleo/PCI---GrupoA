@@ -73,13 +73,14 @@ def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col
     """
     Retorna a lista de nomes de tasks a serem reexecutadas com base no filtro:
       - 'incorrect': Todas as tasks com status INCORRECT, ERROR ou UNKNOWN na planilha de acurácia.
-      - 'insufficient': Tasks com falha que também contenham 'insufficient data' na planilha de reasoning.
+      - 'insufficient': Tasks com falha que também contenham 'insufficient' ou erro na planilha de reasoning/grids.
     """
     model_col_name = model_col_name or os.getenv("GEMMA_MODEL", "AI_Model")
     dir_path, base = resolve_spreadsheet_paths(base_filename)
     
     acc_file = os.path.join(dir_path, f"{base}_accuracy.csv")
     rea_file = os.path.join(dir_path, f"{base}_reasoning.csv")
+    grid_file = os.path.join(dir_path, f"{base}_grids.csv")
     
     if not os.path.exists(acc_file):
         print(f"[!] Arquivo de acurácia '{acc_file}' não encontrado para aplicar o filtro de retry.")
@@ -99,31 +100,56 @@ def get_retry_tasks(base_filename: str, retry_mode: str = "incorrect", model_col
                         reasoning_map[str(row["Task"]).strip()] = str(row[model_col_name])
             except Exception:
                 pass
+
+        grids_map = {}
+        if os.path.exists(grid_file):
+            try:
+                df_grid = pd.read_csv(grid_file)
+                if "Task" in df_grid.columns and model_col_name in df_grid.columns:
+                    for _, row in df_grid.iterrows():
+                        grids_map[str(row["Task"]).strip()] = str(row[model_col_name])
+            except Exception:
+                pass
                 
         tasks_to_retry = []
+        total_scanned = 0
+        total_failed = 0
+        
         for _, row in df_acc.iterrows():
             task_name = str(row["Task"]).strip()
             if task_name in SUMMARY_ROW_NAMES:
                 continue
-                
+            
+            total_scanned += 1
             status_val = str(row[model_col_name]).strip()
             is_failed = (status_val != "CORRECT" and status_val != "nan" and status_val != "")
             
             if not is_failed:
                 continue
-                
+            
+            total_failed += 1
+            
             if retry_mode == "incorrect":
                 tasks_to_retry.append(task_name)
             elif retry_mode == "insufficient":
                 rea_val = reasoning_map.get(task_name, "").lower()
+                grid_val = grids_map.get(task_name, "").lower()
                 status_lower = status_val.lower()
                 
-                has_insufficient = "insufficient data" in rea_val
-                has_error = "error" in status_lower or "erro" in status_lower or "error" in rea_val or "erro" in rea_val
+                has_insufficient = "insufficient" in rea_val or "insufficient" in grid_val
+                has_error = (
+                    "error" in status_lower or "erro" in status_lower or 
+                    "error" in rea_val or "erro" in rea_val or 
+                    "error" in grid_val or "erro" in grid_val or
+                    "429" in rea_val or "quota" in rea_val or
+                    "rate limit" in rea_val or "exceeded" in rea_val
+                )
                 
                 if has_insufficient or has_error:
                     tasks_to_retry.append(task_name)
                     
+        print(f"[i] Varredura da Planilha: {total_scanned} tasks avaliadas, {total_failed} falhas detectadas.")
+        print(f"[i] Tasks selecionadas pelo filtro '{retry_mode}': {len(tasks_to_retry)} tasks.")
         return tasks_to_retry
     except Exception as e:
         print(f"Erro ao buscar tasks para retry: {e}")
