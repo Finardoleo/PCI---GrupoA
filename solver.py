@@ -124,12 +124,11 @@ def build_reasoning_prompt(task: dict) -> str:
     )
     return s
 
-def solve_task(path, api_key: str = None, task_label: str = None):
+def solve_task(path, api_key: str = None):
     task = load_json(path)
     reasoning_prompt = build_reasoning_prompt(task)
     
-    label_prefix = f"[{task_label}] " if task_label else ""
-    print(f"{label_prefix}Processando task (2-Step Prompting com High Thinking)...")
+    print(f"Processando task (2-Step Prompting com High Thinking)...")
     
     tokens = {
         "prompt": 0,
@@ -143,7 +142,7 @@ def solve_task(path, api_key: str = None, task_label: str = None):
         # ETAPA 1: Raciocínio Profundo (Thinking Mode: HIGH)
         chat_1 = [{"role": "user", "parts": [{"text": reasoning_prompt}]}]
         
-        print(f"  {label_prefix}Etapa 1: Pensando com High Thinking...")
+        print(f"  Etapa 1: Pensando com High Thinking...")
         res_1 = generate_chat(chat_1, api_key=api_key, temperature=0.6, max_tokens=16384, thinking_level="HIGH")
         raw_thought = res_1["text"]
         latency_1 = res_1["latency"]
@@ -152,7 +151,7 @@ def solve_task(path, api_key: str = None, task_label: str = None):
         for k in tokens:
             tokens[k] += res_1["tokens"].get(k, 0)
             
-        print(f"\n--- {label_prefix}LLM REASONING ---")
+        print("\n--- LLM REASONING ---")
         print(raw_thought[:1000] + ("..." if len(raw_thought) > 1000 else ""))
         print(f"Latency Stage 1: {latency_1:.2f}s | Tokens: {res_1['tokens']}")
         print("---------------------\n")
@@ -177,7 +176,7 @@ Inverted the colors and shifted diagonal pixels down by one.
         
         chat_2 = [{"role": "user", "parts": [{"text": formatting_prompt}]}]
         
-        print(f"  {label_prefix}Etapa 2: Formatando a saída (Thinking: MINIMAL)...")
+        print(f"  Etapa 2: Formatando a saída (Thinking: MINIMAL)...")
         res_2 = generate_chat(chat_2, api_key=api_key, temperature=0.1, max_tokens=8192, thinking_level="MINIMAL")
         raw_prediction = res_2["text"]
         latency_2 = res_2["latency"]
@@ -186,7 +185,7 @@ Inverted the colors and shifted diagonal pixels down by one.
         for k in tokens:
             tokens[k] += res_2["tokens"].get(k, 0)
             
-        print(f"\n--- {label_prefix}LLM RAW EXTRACTION ---")
+        print("\n--- LLM RAW EXTRACTION ---")
         print(raw_prediction)
         print(f"Latency Stage 2: {latency_2:.2f}s | Tokens: {res_2['tokens']}")
         print("----------------------------\n")
@@ -204,7 +203,7 @@ Inverted the colors and shifted diagonal pixels down by one.
             "total": total_latency
         }
 
-        print(f"{label_prefix}STATUS DA TASK: [{status_str}] | TEMPO: {total_latency:.2f}s | TOKENS: {tokens['total']}\n")
+        print(f"STATUS DA TASK: [{status_str}] | TEMPO: {total_latency:.2f}s | TOKENS: {tokens['total']}\n")
         
         return {
             "is_correct": is_correct,
@@ -217,7 +216,7 @@ Inverted the colors and shifted diagonal pixels down by one.
         }
                 
     except Exception as e:
-        print(f"{label_prefix}Erro na execução da task: {e}")
+        print(f"Erro na execução da task: {e}")
         return {
             "is_correct": False,
             "status": f"ERROR: {e}",
