@@ -1,7 +1,7 @@
 # Benchmark ARC-AGI: Raciocínio Genuíno ou Memorização de Dados Públicos?
 **Estudo Comparativo entre Gemma 4 (31B-IT) e Gemini 3.5 Flash Lite sob Perturbações Espaciais Equivariantes e Assimétricas**
 
-* **Discentes:** Gabriel Pieruccini Knopp, Leonardo Finardi, Luis
+* **Discentes:** Gabriel Pieruccini Knopp, Leonardo Greco Fin, Luis Henrique Caselani Macedo Junior
 * **Docentes & Avaliadores:** Prof. André Grahl Pereira, Profa. Érika Fernandes Cota, Prof. Frederico Messa Schwartzhaupt, Prof. João Cesar Netto
 * **Instituição:** Universidade Federal do Rio Grande do Sul (UFRGS) • Instituto de Informática • Projeto em Ciência e Inovação (PCI)
 
