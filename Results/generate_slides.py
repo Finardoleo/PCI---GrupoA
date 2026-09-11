@@ -1235,8 +1235,8 @@ def generate_resumida():
               <div style="font-size: 1.1rem; font-weight: 800; color: var(--brown-cognac); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Discentes</div>
               <div style="font-size: 1.4rem; font-weight: 800; color: var(--brown-deep); line-height: 1.6;">
                 • Gabriel Pieruccini Knopp<br>
-                • Leonardo Finardi<br>
-                • Luis
+                • Leonardo Greco Fin<br>
+                • Luis Henrique Caselani Macedo Junior
               </div>
             </div>
 
@@ -1713,8 +1713,8 @@ def generate_completa():
               <div style="font-size: 1.1rem; font-weight: 800; color: var(--brown-cognac); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Discentes Responsáveis</div>
               <div style="font-size: 1.4rem; font-weight: 800; color: var(--brown-deep); line-height: 1.6;">
                 • Gabriel Pieruccini Knopp<br>
-                • Leonardo Finardi<br>
-                • Luis
+                • Leonardo Greco Fin<br>
+                • Luis Henrique Caselani Macedo Junior
               </div>
             </div>
 
